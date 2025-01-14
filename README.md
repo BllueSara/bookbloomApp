@@ -84,6 +84,10 @@ BookBloom provides an innovative platform for authors to publish and protect the
 ## Contributors
 
 - [BlueSara](https://github.com/BllueSara)
+- [Radi1n](https://github.com/Radi1n)
+- [GhSh04](https://github.com/GhSh04)
+- [Ar-babari](https://github.com/Ar-babari)
+- [Sarahuucc](https://github.com/Sarahuucc)
 
 We welcome contributions! Feel free to submit pull requests or report issues.
 
