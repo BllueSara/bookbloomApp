@@ -234,7 +234,8 @@ class _ReadBookScreenState extends State<ReadBookScreen> {
           child: StatefulBuilder(
             builder: (BuildContext context, StateSetter setState) {
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 constraints: const BoxConstraints(maxHeight: 300),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -261,7 +262,8 @@ class _ReadBookScreenState extends State<ReadBookScreen> {
                                 }
                               : null,
                           child: Padding(
-                            padding: const EdgeInsets.only(right: 16), // تعديل موضع كلمة Save
+                            padding: const EdgeInsets.only(
+                                right: 16), // تعديل موضع كلمة Save
                             child: Text(
                               Textclass.Save,
                               style: TextStyles.Bold16.copyWith(
@@ -274,7 +276,7 @@ class _ReadBookScreenState extends State<ReadBookScreen> {
                         ),
                       ],
                     ),
-                    
+
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -289,7 +291,7 @@ class _ReadBookScreenState extends State<ReadBookScreen> {
                         Radio<int>(
                           value: 1,
                           groupValue: selectedOption,
-                          fillColor: MaterialStateProperty.resolveWith<Color>(
+                          fillColor: WidgetStateProperty.resolveWith<Color>(
                             (states) => selectedOption == 1
                                 ? Colorclass.brown
                                 : Colorclass.grey,
@@ -317,7 +319,7 @@ class _ReadBookScreenState extends State<ReadBookScreen> {
                         Radio<int>(
                           value: 2,
                           groupValue: selectedOption,
-                          fillColor: MaterialStateProperty.resolveWith<Color>(
+                          fillColor: WidgetStateProperty.resolveWith<Color>(
                             (states) => selectedOption == 2
                                 ? Colorclass.brown
                                 : Colorclass.grey,
@@ -345,7 +347,7 @@ class _ReadBookScreenState extends State<ReadBookScreen> {
                         Radio<int>(
                           value: 3,
                           groupValue: selectedOption,
-                          fillColor: MaterialStateProperty.resolveWith<Color>(
+                          fillColor: WidgetStateProperty.resolveWith<Color>(
                             (states) => selectedOption == 3
                                 ? Colorclass.brown
                                 : Colorclass.grey,

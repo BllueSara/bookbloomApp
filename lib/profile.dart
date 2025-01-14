@@ -34,11 +34,11 @@ class _ProfileState extends State<Profile> {
             decoration: InputDecoration(
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: Colorclass.grey),
+                borderSide: const BorderSide(color: Colorclass.grey),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: BorderSide(color: Colorclass.brown),
+                borderSide: const BorderSide(color: Colorclass.brown),
               ),
               hintText: "Enter new display name",
               hintStyle: TextStyles.hint14.copyWith(color: Colorclass.grey),
@@ -80,7 +80,7 @@ class _ProfileState extends State<Profile> {
         return Wrap(
           children: [
             ListTile(
-              leading: Icon(Icons.photo, color: Colorclass.brown),
+              leading: const Icon(Icons.photo, color: Colorclass.brown),
               title: Text("Choose from gallery",
                   style: TextStyles.hint14.copyWith(color: Colorclass.brown)),
               onTap: () {
@@ -89,7 +89,7 @@ class _ProfileState extends State<Profile> {
               },
             ),
             ListTile(
-              leading: Icon(Icons.camera_alt, color: Colorclass.brown),
+              leading: const Icon(Icons.camera_alt, color: Colorclass.brown),
               title: Text("Take a photo",
                   style: TextStyles.hint14.copyWith(color: Colorclass.brown)),
               onTap: () {
@@ -98,7 +98,7 @@ class _ProfileState extends State<Profile> {
               },
             ),
             ListTile(
-              leading: Icon(Icons.delete, color: Colorclass.brown),
+              leading: const Icon(Icons.delete, color: Colorclass.brown),
               title: Text("Remove photo",
                   style: TextStyles.hint14.copyWith(color: Colorclass.brown)),
               onTap: () {
@@ -196,9 +196,9 @@ class _ProfileState extends State<Profile> {
             Stack(
               alignment: Alignment.bottomRight,
               children: [
-                CircleAvatar(
+                const CircleAvatar(
                   radius: 50,
-                  backgroundImage: const AssetImage('images/avatar1.png'),
+                  backgroundImage: AssetImage('images/avatar1.png'),
                   backgroundColor: Colorclass.grey,
                 ),
                 Positioned(
@@ -206,7 +206,7 @@ class _ProfileState extends State<Profile> {
                   right: 0,
                   child: GestureDetector(
                     onTap: _changeProfilePicture, // خاصية تغيير الصورة
-                    child: Icon(
+                    child: const Icon(
                       Icons.edit,
                       size: 20,
                       color: Colorclass.brown,
@@ -227,7 +227,7 @@ class _ProfileState extends State<Profile> {
                 const SizedBox(width: 5),
                 GestureDetector(
                   onTap: _editDisplayName, // خاصية تعديل الاسم المعروض
-                  child: Icon(
+                  child: const Icon(
                     Icons.edit,
                     size: 18,
                     color: Colorclass.brown,
