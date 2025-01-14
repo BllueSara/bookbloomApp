@@ -1,3 +1,5 @@
+import 'package:bookbloom/LoginScreen.dart';
+import 'package:bookbloom/mainpage.dart';
 import 'package:flutter/material.dart';
 import 'package:bookbloom/BaseClasses/ColorClass.dart';
 import 'package:bookbloom/BaseClasses/TextClass.dart';
@@ -11,51 +13,83 @@ class Signupscreen extends StatefulWidget {
 }
 
 class _SignupscreenState extends State<Signupscreen> {
+  final formKey = GlobalKey<FormState>();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colorclass.white,
-      appBar: AppBar(
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        forceMaterialTransparency: true,
-        leading: BackButton(
-          color: Colorclass.dustyPink,
-          style: ButtonStyle(
-            iconSize: WidgetStateProperty.all(30),
-          ),
-        ),
-        title: const Text(
-          Textclass.Createyaccount,
-          style: TextStyles.Bold24,
-        ),
-        centerTitle: true,
-      ),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const SizedBox(height: 50),
-              CircleAvatar(
-                radius: 50,
-                backgroundColor: Colorclass.grey,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(50),
-                  child: Image.asset('images/avatar1.png'),
+          child: Form(
+            key: formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const SizedBox(height: 30),
+                Row(
+                  children: [
+                    Transform.translate(
+                      offset: const Offset(-15, 0),
+                      child: IconButton(
+                        icon: const Icon(
+                          Icons.keyboard_backspace,
+                          color: Colorclass.dustyPink,
+                          size: 40,
+                        ),
+                        onPressed: () {
+                          Navigator.of(context).push(MaterialPageRoute(
+                            builder: (context) {
+                              return const Loginscreen();
+                            },
+                          ));
+                        },
+                      ),
+                    ),
+                    const SizedBox(
+                      width: 10,
+                    ),
+                    const Center(
+                      child: Text(
+                        Textclass.Createyaccount,
+                        style: TextStyles.Bold24,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 50),
-              const CustomTextFormField(hintText: Textclass.displayname),
-              const CustomTextFormField(hintText: Textclass.Username),
-              const CustomTextFormField(hintText: Textclass.Email),
-              const CustomTextFormField(hintText: Textclass.Password),
-              const SizedBox(height: 50),
-              const CustomButton(
-                title: Textclass.Getstarted,
-              ),
-            ],
+                const SizedBox(height: 40),
+                CircleAvatar(
+                  radius: 50,
+                  backgroundColor: Colorclass.grey,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(50),
+                    child: Image.asset('images/avatar1.png'),
+                  ),
+                ),
+                const SizedBox(height: 50),
+                const CustomTextFormField(
+                    hintText: Textclass.displayname, fieldHeight: 70),
+                const CustomTextFormField(
+                    hintText: Textclass.Username, fieldHeight: 70),
+                const CustomTextFormField(
+                    hintText: Textclass.Email, fieldHeight: 70),
+                const CustomTextFormField(
+                    hintText: Textclass.Password, fieldHeight: 70),
+                const SizedBox(height: 50),
+                CustomButton(
+                  title: Textclass.Getstarted,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MainPage(),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -106,9 +140,11 @@ class CustomTextFormField extends StatelessWidget {
   const CustomTextFormField({
     super.key,
     required this.hintText,
+    this.fieldHeight = 70,
     this.isReset = false,
   });
   final String hintText;
+  final double fieldHeight;
   final bool isReset;
   @override
   Widget build(BuildContext context) {
@@ -118,25 +154,22 @@ class CustomTextFormField extends StatelessWidget {
         alignment: Alignment.center,
         children: [
           Container(
-            height: 70,
-            width: 450,
+            height: fieldHeight,
+            width: double.infinity,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(50),
               gradient: Colorclass.gradient,
             ),
           ),
-          SizedBox(
-            height: 57,
-            width: 390,
+          Padding(
+            padding: const EdgeInsets.all(8),
             child: TextFormField(
               decoration: InputDecoration(
                 filled: true,
                 fillColor: Colorclass.white,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(50),
-                  borderSide: BorderSide.none,
-                ),
-                // labelText: TextClass.Username,
+                    borderRadius: BorderRadius.circular(50),
+                    borderSide: BorderSide.none),
                 hintText: hintText,
                 suffixIcon: isReset
                     ? null
