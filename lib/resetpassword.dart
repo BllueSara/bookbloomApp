@@ -57,7 +57,7 @@ class _ResetpasswordState extends State<Resetpassword> {
                 child: Text(
                   textAlign: TextAlign.center,
                   Textclass.WeHaveSent,
-                  style: TextStyles.hint14,
+                  style: TextStyles.normal16,
                 ),
               ),
             ),
@@ -92,7 +92,7 @@ class _ResetpasswordState extends State<Resetpassword> {
               ),
             ),
             Transform.translate(
-              offset: const Offset(0, -270),
+              offset: const Offset(0, -300),
               child: Container(
                 height: 90,
                 width: 90,
@@ -100,7 +100,7 @@ class _ResetpasswordState extends State<Resetpassword> {
                   borderRadius: BorderRadius.circular(14),
                   color: Colorclass.dustyPink,
                 ),
-                child: Image.asset('images/chat1.png'),
+                child: Image.asset('images/message.png'),
               ),
             ),
           ],
@@ -208,4 +208,4 @@ class _ResetpasswordState extends State<Resetpassword> {
       ),
     );
   }
- } 
+   }
