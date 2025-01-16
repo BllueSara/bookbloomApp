@@ -65,7 +65,17 @@ class Textclass {
   static const Book = "Book "; // profile , Size : normal16 , Color : grey
   static const Readers = "Readers "; // profile , Size : normal16 , Color : grey
   static const MyBooks = "My Books "; // profile , Size : Bold18 , Color : brown
-  static const MyPicks = "My Picks "; // profile , Size : Bold18 , Color : brown
+  static const MyPicks = "My Picks "; 
+  static const AuthorBooks  = "Author’s Books  "; 
+  static const AuthorList  = "Author’s Lists  "; 
+  static const BooksRead  = "Books Read  "; 
+  static const Willo34  = "@Willo34 "; 
+  static const William  = "William "; 
+  static const BookName  = "Book Name "; 
+  
+
+
+  // profile , Size : Bold18 , Color : brown
 
   // Settings
   static const Settings =

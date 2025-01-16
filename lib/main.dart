@@ -1,6 +1,9 @@
 import 'package:bookbloom/mainpage.dart';
 import 'package:bookbloom/profile.dart';
+import 'package:bookbloom/readingprofile.dart';
+import 'package:bookbloom/searchscreen.dart';
 import 'package:bookbloom/shelfbook.dart';
+import 'package:bookbloom/writeingspaceScreen.dart';
 import 'package:flutter/material.dart';
 
 void main() {
