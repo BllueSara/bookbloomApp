@@ -3,7 +3,10 @@
 import 'package:bookbloom/BaseClasses/ColorClass.dart';
 import 'package:bookbloom/BaseClasses/TextClass.dart';
 import 'package:bookbloom/BaseClasses/TextStyleClass.dart';
+import 'package:bookbloom/SignUpScreen.dart';
 import 'package:bookbloom/ShapesClasses/LoginShape.dart'; // كلاس الرسمة
+import 'package:bookbloom/mainpage.dart';
+import 'package:bookbloom/resetpassword.dart';
 import 'package:flutter/material.dart';
 
 class Loginscreen extends StatelessWidget {
@@ -110,15 +113,34 @@ class Loginscreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  Align(
-                    alignment: Alignment.centerRight,
+                  // Align(
+                  //   alignment: Alignment.centerRight,
+                  //   child: Text(
+                  //     Textclass.ForgotPassword,  // استدعاء النص من كلاس Textclass
+                  //     style: TextStyles.normal18.copyWith(
+                  //       color: Colorclass.dustyPink,  // استدعاء اللون من كلاس Colorclass
+                  //     ),
+                  //   ),
+                  // ),
+
+                  TextButton(
+                    onPressed: () {
+
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => Resetpassword()),
+                      );
+                    },
                     child: Text(
-                      Textclass.ForgotPassword,  // استدعاء النص من كلاس Textclass
+                      Textclass.ForgotPassword,
                       style: TextStyles.normal18.copyWith(
-                        color: Colorclass.dustyPink,  // استدعاء اللون من كلاس Colorclass
+
+
+                        color: Colorclass.dustyPink,
                       ),
                     ),
                   ),
+
                   const SizedBox(height: 15),
                   // زر تسجيل الدخول
                   Align(
@@ -131,7 +153,14 @@ class Loginscreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: MaterialButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const MainPage(),
+                            ),
+                          );
+                        },
                         child: Text(
                           Textclass.Login,  // استدعاء النص من كلاس Textclass
                           style: TextStyles.Bold18.copyWith(
@@ -151,11 +180,16 @@ class Loginscreen extends StatelessWidget {
                         style: TextStyles.normal18,  // استدعاء التنسيق من كلاس TextStyles
                       ),
                       TextButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) =>Signupscreen()),
+                          );
+                        },
                         child: Text(
-                          Textclass.CreateAccount,  // استدعاء النص من كلاس Textclass
+                          Textclass.CreateAccount,
                           style: TextStyles.normal18.copyWith(
-                            color: Colorclass.dustyPink,  // استدعاء اللون من كلاس Colorclass
+                            color: Colorclass.dustyPink,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
