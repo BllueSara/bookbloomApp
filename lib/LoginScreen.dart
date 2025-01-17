@@ -1,5 +1,3 @@
-// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
-
 import 'package:bookbloom/BaseClasses/ColorClass.dart';
 import 'package:bookbloom/BaseClasses/TextClass.dart';
 import 'package:bookbloom/BaseClasses/TextStyleClass.dart';
@@ -21,7 +19,7 @@ class Loginscreen extends StatelessWidget {
           children: [
             // الرسمة في الأعلى
             Transform.translate(
-              offset: const Offset(30, 7), // المسافات للرسمة
+              offset: const Offset(25, 7), // المسافات للرسمة
               child: CustomPaint(
                 size: const Size(307, 231),
                 painter: RPSSCustomPainter(),
@@ -37,13 +35,13 @@ class Loginscreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      Textclass.Log_in,  // استدعاء النص من كلاس Textclass
-                      style: TextStyles.Bold30,  // استدعاء التنسيق من كلاس TextStyles
+                      Textclass.Log_in, // استدعاء النص من كلاس Textclass
+                      style: TextStyles.Bold30, // استدعاء التنسيق من كلاس TextStyles
                     ),
                     const SizedBox(height: 5),
                     Text(
-                      Textclass.Please,  // استدعاء النص من كلاس Textclass
-                      style: TextStyles.normal18,  // استدعاء التنسيق من كلاس TextStyles
+                      Textclass.Please, // استدعاء النص من كلاس Textclass
+                      style: TextStyles.normal18, // استدعاء التنسيق من كلاس TextStyles
                     ),
                   ],
                 ),
@@ -57,19 +55,19 @@ class Loginscreen extends StatelessWidget {
                   // حقل إدخال البريد الإلكتروني
                   Container(
                     decoration: BoxDecoration(
-                      gradient: Colorclass.gradient,  // استدعاء التدرج من كلاس Colorclass
+                      gradient: Colorclass.gradient, // استدعاء التدرج من كلاس Colorclass
                       borderRadius: BorderRadius.circular(30), // زوايا الحواف
                     ),
                     padding: const EdgeInsets.all(5), // سمك الحواف
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colorclass.white,  // استدعاء اللون من كلاس Colorclass
+                        color: Colorclass.white, // استدعاء اللون من كلاس Colorclass
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: TextField(
                         decoration: InputDecoration(
-                          hintText: Textclass.Email,  // استدعاء النص من كلاس Textclass
-                          hintStyle: TextStyles.normal16,  // استدعاء التنسيق من كلاس TextStyles
+                          hintText: Textclass.Email, // استدعاء النص من كلاس Textclass
+                          hintStyle: TextStyles.normal16, // استدعاء التنسيق من كلاس TextStyles
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(30),
                             borderSide: BorderSide.none, // بدون حدود إضافية
@@ -84,20 +82,20 @@ class Loginscreen extends StatelessWidget {
                   // حقل إدخال كلمة المرور
                   Container(
                     decoration: BoxDecoration(
-                      gradient: Colorclass.gradient,  // استدعاء التدرج من كلاس Colorclass
+                      gradient: Colorclass.gradient, // استدعاء التدرج من كلاس Colorclass
                       borderRadius: BorderRadius.circular(30), // زوايا الحواف
                     ),
                     padding: const EdgeInsets.all(5), // سمك الحواف
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colorclass.white,  // استدعاء اللون من كلاس Colorclass
+                        color: Colorclass.white, // استدعاء اللون من كلاس Colorclass
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: TextField(
                         obscureText: true,
                         decoration: InputDecoration(
-                          hintText: Textclass.Password,  // استدعاء النص من كلاس Textclass
-                          hintStyle: TextStyles.normal16,  // استدعاء التنسيق من كلاس TextStyles
+                          hintText: Textclass.Password, // استدعاء النص من كلاس Textclass
+                          hintStyle: TextStyles.normal16, // استدعاء التنسيق من كلاس TextStyles
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(30),
                             borderSide: BorderSide.none, // بدون حدود إضافية
@@ -106,50 +104,41 @@ class Loginscreen extends StatelessWidget {
                               const EdgeInsets.symmetric(horizontal: 20), // مسافة داخلية
                           suffixIcon: Icon(
                             Icons.visibility,
-                            color: Colorclass.brown,  // استدعاء اللون من كلاس Colorclass
+                            color: Colorclass.brown, // استدعاء اللون من كلاس Colorclass
                           ),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 10),
-                  // Align(
-                  //   alignment: Alignment.centerRight,
-                  //   child: Text(
-                  //     Textclass.ForgotPassword,  // استدعاء النص من كلاس Textclass
-                  //     style: TextStyles.normal18.copyWith(
-                  //       color: Colorclass.dustyPink,  // استدعاء اللون من كلاس Colorclass
-                  //     ),
-                  //   ),
-                  // ),
-
-                  TextButton(
-                    onPressed: () {
-
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (context) => Resetpassword()),
-                      );
-                    },
-                    child: Text(
-                      Textclass.ForgotPassword,
-                      style: TextStyles.normal18.copyWith(
-
-
-                        color: Colorclass.dustyPink,
+                  // "Forgot Password?" في الجهة اليمنى أسفل الحقل
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => Resetpassword(),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        Textclass.ForgotPassword,
+                        style: TextStyles.normal18.copyWith(
+                          color: Colorclass.dustyPink,
+                        ),
                       ),
                     ),
                   ),
-
-                  const SizedBox(height: 15),
+                  const SizedBox(height: 100),
                   // زر تسجيل الدخول
                   Align(
                     alignment: Alignment.center, // محاذاة الزر لليمين
                     child: Container(
-                      width: 150,
-                      height: 40,
+                      height: 60,
+                      width: double.infinity,
                       decoration: BoxDecoration(
-                        gradient: Colorclass.gradient,  // استدعاء التدرج من كلاس Colorclass
+                        gradient: Colorclass.gradient, // استدعاء التدرج من كلاس Colorclass
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: MaterialButton(
@@ -162,28 +151,28 @@ class Loginscreen extends StatelessWidget {
                           );
                         },
                         child: Text(
-                          Textclass.Login,  // استدعاء النص من كلاس Textclass
-                          style: TextStyles.Bold18.copyWith(
-                            color: Colorclass.white,  // استدعاء اللون من كلاس Colorclass
+                          Textclass.Login, // استدعاء النص من كلاس Textclass
+                          style: TextStyles.Bold24.copyWith(
+                            color: Colorclass.white, // استدعاء اللون من كلاس Colorclass
                           ),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 80),
+                  const SizedBox(height: 20),
                   // رابط إنشاء حساب جديد
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        Textclass.DontHave,  // استدعاء النص من كلاس Textclass
-                        style: TextStyles.normal18,  // استدعاء التنسيق من كلاس TextStyles
+                        Textclass.DontHave, // استدعاء النص من كلاس Textclass
+                        style: TextStyles.normal18, // استدعاء التنسيق من كلاس TextStyles
                       ),
                       TextButton(
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) =>Signupscreen()),
+                            MaterialPageRoute(builder: (context) => Signupscreen()),
                           );
                         },
                         child: Text(
