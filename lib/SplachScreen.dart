@@ -24,6 +24,7 @@ class Splachscreen extends StatelessWidget {
         ),
       ),
       
-            );
+      
+    );
   }
 }
