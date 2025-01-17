@@ -1,38 +1,9 @@
-// import 'package:bookbloom/ShapesClasses/SplachShape.dart';
-// import 'package:flutter/material.dart';
-//
-//
-// class Splachscreen extends StatelessWidget {
-//   const Splachscreen({super.key});
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       body: Center(
-//         child: Column(
-//           children: [
-//             Transform.translate(
-//               offset: const Offset(-30, 50), //المسافات
-//               child: CustomPaint(
-//                 // رسمة splash
-//
-//                 size: const Size(354, 401),
-//                 painter: RPSCustomPainter(),
-//               ),
-//             ),
-//           ],
-//         ),
-//       ),
-//
-//             );
-//   }
-// }
-//
-//
-
-import 'package:flutter/material.dart';
-import 'package:bookbloom/ShapesClasses/SplachShape.dart';
+import 'package:bookbloom/BaseClasses/ColorClass.dart';
+import 'package:bookbloom/BaseClasses/TextClass.dart';
+import 'package:bookbloom/BaseClasses/TextStyleClass.dart';
 import 'package:bookbloom/LoginScreen.dart';
+import 'package:bookbloom/ShapesClasses/SplachShape.dart';
+import 'package:flutter/material.dart';
 
 class Splachscreen extends StatelessWidget {
   const Splachscreen({super.key});
@@ -41,93 +12,93 @@ class Splachscreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Transform.translate(
-              offset: const Offset(-40, -120),
-              child: CustomPaint(
-                size: const Size(400, 80),
-                painter: RPSCustomPainter(),
-              ),
-            ),
-
-            const SizedBox(height: 10),
-
-            Image.asset(
-              'assets/images/bookbloom.png',
-              width: 250,
-              height: 200,
-            ),
-      Padding(
-        padding: const EdgeInsets.only(left: 20.0, right: 20),
-           child:  RichText(
-
-              text: TextSpan(
-
-                text: 'Welcome to ',
-                style: const TextStyle(
-
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
+        child: SingleChildScrollView(
+          physics: const NeverScrollableScrollPhysics(),
+          child: Column(
+            children: [
+              Transform.translate(
+                offset: const Offset(-30, 40), //المسافات
+                child: CustomPaint(
+                  // رسمة splash
+                  size: const Size(354, 401),
+                  painter: RPSCustomPainter(),
                 ),
-                children: <TextSpan>[
-                  TextSpan(
-                    text: 'BookBloom',
-                    style: const TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xffD4ACA5),
+              ),
+              Transform.translate(
+                offset: const Offset(0, -230), //المسافات
+                child: Image.asset(
+                  'images/bookbloom.png',
+                  width: 350,
+                  height: 300,
+                ),
+              ),
+              Transform.translate(
+                offset: const Offset(0, -300), //المسافات
+                child: RichText(
+                  textAlign: TextAlign.center,
+                  text: TextSpan(
+                    text: Textclass.Welcome,
+                    style: TextStyles.Bold30.copyWith(
+                      color: Colorclass.brown,
+                    ),
+                    children: <TextSpan>[
+                      TextSpan(
+                        text: Textclass.BookBloom,
+                        style: TextStyles.Bold30.copyWith(
+                          color: Colorclass.dustyPink,
+                        ),
+                      ),
+                      TextSpan(
+                        text: Textclass.Flourish,
+                        style: TextStyles.Bold30.copyWith(
+                          color: Colorclass.brown,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Transform.translate(
+                offset: const Offset(-10, -280), //المسافات
+                child: Text(
+                  Textclass.Explore,
+                  textAlign: TextAlign.left,
+                  style: TextStyles.hint14.copyWith(
+                    color: Colorclass.gbrown,
+                  ),
+                ),
+              ),
+              Transform.translate(
+                offset: const Offset(0, -200), //المسافات
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const Loginscreen()),
+                    );
+                  },
+                  child: Container(
+                    width: 250,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      gradient: Colorclass.gradient,
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      Textclass.LetsGo,
+                      style: TextStyles.Bold18.copyWith(
+                        color: Colorclass.white,
+                      ),
                     ),
                   ),
-                  const TextSpan(
-                    text: ' where Stories Flourish!',
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
-      ),
-            const SizedBox(height: 30),
-      Padding(
-        padding: const EdgeInsets.only(left: 22.0, right: 22),
-            child:  Text(
-              'Explor a World of Free Reading and Writing Where Every Story is Just a Page Away',
-              style: TextStyle(
-
-                fontSize: 16,
-              ),
-            ),
-      ),
-            const SizedBox(height: 40),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => Loginscreen()),
-                );
-              },
-              child: const Text("Let's Go",
-                  style: TextStyle(  fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,),
-              ),
-              style: ElevatedButton.styleFrom(
-
-                fixedSize: Size(200, 50),
-                backgroundColor:Color(0xffD4ACA5),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
-
-
