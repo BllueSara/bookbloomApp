@@ -1,3 +1,5 @@
+import 'package:bookbloom/SplachScreen.dart';
+import 'package:bookbloom/WriteStoryScreen.dart';
 import 'package:bookbloom/mainpage.dart';
 import 'package:bookbloom/profile.dart';
 import 'package:bookbloom/readingprofile.dart';
@@ -17,7 +19,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: MainPage(),
+      home: Splachscreen(),
     );
   }
 }

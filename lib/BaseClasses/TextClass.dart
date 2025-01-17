@@ -141,4 +141,15 @@ class Textclass {
   static const Author = "Author"; //Size : normal16 , Color : grey
   static const Inkspire = "Inkspire"; //Size : normal16 , Color : grey
 
+  static const part = " part title"; //Size : normal16 , Color : grey
+
+  static const start = "start writing your story"; //Size : normal16 , Color : grey
+
+
+  static const Publish = "Publish"; //Size : normal16 , Color : grey
+
+
+  static const Draft = "Save as a Draft"; //Size : normal16 , Color : grey
+
+
 }
