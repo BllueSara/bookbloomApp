@@ -8,7 +8,7 @@ class Textclass {
   static const Flourish =
       "Where Stories Flourish!"; // SplachClass , Size : Bold30 , Color : brown
   static const Explore =
-      "Explore a World of Free Reading and Writing, Where Every Story is Just a Page Away."; // SplachClass , Size : normal18 , Color : grey
+      "Explore a World of Free Reading and Writing,\nWhere Every Story is Just a Page Away."; // SplachClass , Size : normal18 , Color : grey
   static const LetsGo =
       "Let’s Go "; // SplachClass , Size : Bold18 , Color : white
 
