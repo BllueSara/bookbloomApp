@@ -24,6 +24,7 @@ class _ReadingprofileState extends State<Readingprofile> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colorclass.white,
       appBar: AppBar(
           title: const Text(
             Textclass.Willo34,

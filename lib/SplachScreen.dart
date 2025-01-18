@@ -75,7 +75,7 @@ class Splachscreen extends StatelessWidget {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                          builder: (context) => const Loginscreen()),
+                          builder: (context) =>  Loginscreen()),
                     );
                   },
                   child: Container(

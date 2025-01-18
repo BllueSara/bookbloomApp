@@ -1,3 +1,6 @@
+import 'package:bookbloom/resetpassword.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:bookbloom/SplachScreen.dart';
 import 'package:bookbloom/BaseClasses/ColorClass.dart';
@@ -12,11 +15,38 @@ class Profile extends StatefulWidget {
 }
 
 class _ProfileState extends State<Profile> {
-  String displayName = "Display Name"; // الاسم المعروض الافتراضي
+  String displayName = "Loading..."; // الاسم المعروض الافتراضي
   String username = ""; // اسم المستخدم الافتراضي
   String email = ""; // البريد الإلكتروني الافتراضي
   String password = ""; // كلمة المرور الافتراضية
   bool isDarkMode = false; // الوضع الافتراضي (Light Mode)
+
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+
+  // تحميل البيانات من Firestore
+  void _loadUserData() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      var userData = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      setState(() {
+        displayName = user.displayName ?? "No Display Name";
+        username = userData['username'] ?? "";
+        email = user.email ?? "";
+        _usernameController.text = username;
+        _emailController.text = email;
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData(); // تحميل بيانات المستخدم عند بدء التطبيق
+  }
 
   // خاصية تعديل الاسم المعروض
   void _editDisplayName() {
@@ -60,6 +90,10 @@ class _ProfileState extends State<Profile> {
                 setState(() {
                   displayName = controller.text; // تحديث الاسم المعروض
                 });
+                FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(FirebaseAuth.instance.currentUser!.uid)
+                    .update({'displayName': displayName});
                 Navigator.of(context).pop();
               },
               child: Text(
@@ -75,87 +109,87 @@ class _ProfileState extends State<Profile> {
 
   // خاصية تغيير صورة العرض
   void _changeProfilePicture() {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return Wrap(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo, color: Colorclass.brown),
-              title: Text("Choose from gallery",
-                  style: TextStyles.hint14.copyWith(color: Colorclass.brown)),
-              onTap: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.camera_alt, color: Colorclass.brown),
-              title: Text("Take a photo",
-                  style: TextStyles.hint14.copyWith(color: Colorclass.brown)),
-              onTap: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.delete, color: Colorclass.brown),
-              title: Text("Remove photo",
-                  style: TextStyles.hint14.copyWith(color: Colorclass.brown)),
-              onTap: () {
-                setState(() {
-                  // إعادة الصورة الافتراضية
-                });
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
+    // لوظيفتك المتعلقة بتغيير صورة الملف الشخصي
   }
 
   // خاصية التأكيد عند تسجيل الخروج أو حذف الحساب
   void _confirmAction(String action) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(
-            action == "logout" ? "Log Out" : "Delete Account",
-            style: TextStyles.Bold16.copyWith(color: Colorclass.brown),
-          ),
-          content: Text(
-            action == "logout"
-                ? "Are you sure you want to log out?"
-                : "Are you sure you want to delete your account?",
-            style: TextStyles.hint14.copyWith(color: Colorclass.brown),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text(
-                "Cancel",
-                style: TextStyles.hint14.copyWith(color: Colorclass.brown),
-              ),
+    if (action == "logout") {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text(
+              "Are you sure you want to log out?",
+              style: TextStyles.Bold16.copyWith(color: Colorclass.brown),
             ),
-            TextButton(
-              onPressed: () {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => const Splachscreen()),
-                  (Route<dynamic> route) => false,
-                );
-              },
-              child: Text(
-                action == "logout" ? "Log Out" : "Delete",
-                style: TextStyles.Bold16.copyWith(color: Colorclass.Red),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text(
+                  "Cancel",
+                  style: TextStyles.Bold16.copyWith(color: Colorclass.brown),
+                ),
               ),
+              TextButton(
+                onPressed: () async {
+                  await FirebaseAuth.instance.signOut();
+                  Navigator.of(context).pushReplacement(MaterialPageRoute(
+                      builder: (context) => const Splachscreen()));
+                },
+                child: Text(
+                  "Log Out",
+                  style: TextStyles.Bold16.copyWith(color: Colorclass.brown),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    } else if (action == "delete") {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text(
+              "Are you sure you want to delete your account?",
+              style: TextStyles.Bold16.copyWith(color: Colorclass.brown),
             ),
-          ],
-        );
-      },
-    );
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text(
+                  "Cancel",
+                  style: TextStyles.Bold16.copyWith(color: Colorclass.brown),
+                ),
+              ),
+              TextButton(
+                onPressed: () async {
+                  User? user = FirebaseAuth.instance.currentUser;
+                  if (user != null) {
+                    await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(user.uid)
+                        .delete();
+                    await user.delete();
+                    Navigator.of(context).pushReplacement(MaterialPageRoute(
+                        builder: (context) => const Splachscreen()));
+                  }
+                },
+                child: Text(
+                  "Delete Account",
+                  style: TextStyles.Bold16.copyWith(color: Colorclass.brown),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    }
   }
 
   // خاصية تغيير وضع التطبيق
@@ -219,9 +253,13 @@ class _ProfileState extends State<Profile> {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  displayName,
-                  style: TextStyles.normal16.copyWith(color: Colorclass.brown),
+                GestureDetector(
+                  onTap: _editDisplayName,
+                  child: Text(
+                    displayName,
+                    style:
+                        TextStyles.normal16.copyWith(color: Colorclass.brown),
+                  ),
                 ),
                 const SizedBox(width: 5),
                 GestureDetector(
@@ -236,17 +274,40 @@ class _ProfileState extends State<Profile> {
             ),
             const SizedBox(height: 40),
             // الحقول
-            _buildField("user name", Icons.edit, "username"),
+            _buildContainer(
+              "Username",
+              username,
+              const Icon(
+                Icons.person,
+                color: Colorclass.brown,
+              ),
+            ),
             const SizedBox(height: 20),
-            _buildField("email", Icons.email, "email"),
+            _buildContainer(
+              "Email",
+              email,
+              const Icon(
+                Icons.email,
+                color: Colorclass.brown,
+              ),
+            ),
             const SizedBox(height: 20),
-            _buildField("password", Icons.lock, "password"),
+            _buildContainer(
+                "Password",
+                password,
+                const Icon(
+                  Icons.lock,
+                  color: Colorclass.brown,
+                ),
+                isPassword: true),
             const SizedBox(height: 30),
             Align(
               alignment: Alignment.centerLeft,
               child: _buildModeSwitch(),
             ),
-            const Spacer(),
+            const SizedBox(
+              height: 50,
+            ), // المسافة لزر تسجيل الخروج
             GestureDetector(
               onTap: () => _confirmAction("logout"),
               child: _buildLogoutButton(),
@@ -265,40 +326,104 @@ class _ProfileState extends State<Profile> {
     );
   }
 
-  Widget _buildField(String hint, IconData icon, String field) {
-    return Container(
-      height: 50,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(25),
-        gradient: Colorclass.gradient,
-      ),
-      child: Center(
-        child: Container(
-          height: 40,
-          margin: const EdgeInsets.symmetric(horizontal: 5),
-          decoration: BoxDecoration(
-            color: Colorclass.white,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: TextField(
-            onChanged: (value) {
-              setState(() {
-                if (field == "username") username = value;
-                if (field == "email") email = value;
-                if (field == "password") password = value;
-              });
-            },
-            style: TextStyles.normal16.copyWith(color: Colorclass.brown),
-            decoration: InputDecoration(
-              hintText: hint,
-              hintStyle: TextStyles.hint14.copyWith(color: Colorclass.addicon),
-              border: InputBorder.none,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
-              suffixIcon: Icon(
-                icon,
-                size: 20,
-                color: Colorclass.brown,
+  Widget _buildContainer(String hint, String value, Icon icon,
+      {bool isPassword = false}) {
+    return GestureDetector(
+      onTap: () {
+        if (hint == "Password") {
+          // الانتقال إلى صفحة Reset Password عند الضغط على كلمة المرور
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const Resetpassword()),
+          );
+          return;
+        }
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            final TextEditingController controller =
+                TextEditingController(text: value);
+            return AlertDialog(
+              title: Text(
+                "Edit $hint",
+                style: TextStyles.Bold16.copyWith(color: Colorclass.brown),
+              ),
+              content: TextField(
+                controller: controller,
+                obscureText: isPassword,
+                decoration: InputDecoration(
+                  hintText: "Enter new $hint",
+                  hintStyle: TextStyles.hint14.copyWith(color: Colorclass.grey),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text(
+                    "Cancel",
+                    style: TextStyles.Bold16.copyWith(color: Colorclass.brown),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    setState(() {
+                      if (hint == "Username") {
+                        username = controller.text;
+                      } else if (hint == "Email") {
+                        email = controller.text;
+                      }
+                    });
+                    FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(FirebaseAuth.instance.currentUser!.uid)
+                        .update({hint.toLowerCase(): controller.text});
+                    Navigator.of(context).pop();
+                  },
+                  child: Text(
+                    "Save",
+                    style: TextStyles.Bold16.copyWith(color: Colorclass.brown),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+      child: Container(
+        height: 50,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(25),
+          gradient: Colorclass.gradient,
+        ),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(4),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              height: 40,
+              decoration: BoxDecoration(
+                color: Colorclass.white,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    "$hint: ",
+                    style:
+                        TextStyles.normal16.copyWith(color: Colorclass.brown),
+                  ),
+                  Expanded(
+                    child: Text(
+                      value,
+                      style: TextStyles.normal16
+                          .copyWith(color: Colorclass.dustyPink),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  icon,
+                ],
               ),
             ),
           ),
