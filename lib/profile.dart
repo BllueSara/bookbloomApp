@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:bookbloom/SplachScreen.dart';
 import 'package:bookbloom/BaseClasses/ColorClass.dart';
 import 'package:bookbloom/BaseClasses/TextClass.dart';
 import 'package:bookbloom/BaseClasses/TextStyleClass.dart';
@@ -84,7 +85,6 @@ class _ProfileState extends State<Profile> {
               title: Text("Choose from gallery",
                   style: TextStyles.hint14.copyWith(color: Colorclass.brown)),
               onTap: () {
-                // إضافة خاصية اختيار صورة من المعرض
                 Navigator.of(context).pop();
               },
             ),
@@ -93,7 +93,6 @@ class _ProfileState extends State<Profile> {
               title: Text("Take a photo",
                   style: TextStyles.hint14.copyWith(color: Colorclass.brown)),
               onTap: () {
-                // إضافة خاصية التقاط صورة بالكاميرا
                 Navigator.of(context).pop();
               },
             ),
@@ -142,12 +141,11 @@ class _ProfileState extends State<Profile> {
             ),
             TextButton(
               onPressed: () {
-                if (action == "logout") {
-                  // تسجيل الخروج
-                } else {
-                  // حذف الحساب
-                }
-                Navigator.of(context).pop();
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (context) => const Splachscreen()),
+                  (Route<dynamic> route) => false,
+                );
               },
               child: Text(
                 action == "logout" ? "Log Out" : "Delete",
@@ -175,14 +173,15 @@ class _ProfileState extends State<Profile> {
         backgroundColor: Colorclass.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colorclass.brown),
+          icon: const Icon(Icons.keyboard_backspace,
+              color: Colorclass.brown, size: 30),
           onPressed: () {
-            // يمكن إضافة وظيفة العودة هنا
+            Navigator.pop(context);
           },
         ),
         title: Text(
           Textclass.Myprofile,
-          style: TextStyles.Bold16.copyWith(color: Colorclass.brown),
+          style: TextStyles.Bold18.copyWith(color: Colorclass.brown),
         ),
         centerTitle: true,
       ),
@@ -205,7 +204,7 @@ class _ProfileState extends State<Profile> {
                   bottom: 0,
                   right: 0,
                   child: GestureDetector(
-                    onTap: _changeProfilePicture, // خاصية تغيير الصورة
+                    onTap: _changeProfilePicture,
                     child: const Icon(
                       Icons.edit,
                       size: 20,
@@ -226,7 +225,7 @@ class _ProfileState extends State<Profile> {
                 ),
                 const SizedBox(width: 5),
                 GestureDetector(
-                  onTap: _editDisplayName, // خاصية تعديل الاسم المعروض
+                  onTap: _editDisplayName,
                   child: const Icon(
                     Icons.edit,
                     size: 18,
@@ -236,28 +235,23 @@ class _ProfileState extends State<Profile> {
               ],
             ),
             const SizedBox(height: 40),
-            // حقل اسم المستخدم
+            // الحقول
             _buildField("user name", Icons.edit, "username"),
             const SizedBox(height: 20),
-            // حقل البريد الإلكتروني
-            _buildField("email", Icons.lock, "email"),
+            _buildField("email", Icons.email, "email"),
             const SizedBox(height: 20),
-            // حقل كلمة المرور
             _buildField("password", Icons.lock, "password"),
             const SizedBox(height: 30),
-            // مستطيل Mode مع السويتش
             Align(
               alignment: Alignment.centerLeft,
               child: _buildModeSwitch(),
             ),
             const Spacer(),
-            // مستطيل Log Out
             GestureDetector(
               onTap: () => _confirmAction("logout"),
               child: _buildLogoutButton(),
             ),
             const SizedBox(height: 10),
-            // نص Delete Your Account
             GestureDetector(
               onTap: () => _confirmAction("delete"),
               child: Align(
@@ -271,7 +265,6 @@ class _ProfileState extends State<Profile> {
     );
   }
 
-  // مكون بناء الحقول
   Widget _buildField(String hint, IconData icon, String field) {
     return Container(
       height: 50,
@@ -295,11 +288,10 @@ class _ProfileState extends State<Profile> {
                 if (field == "password") password = value;
               });
             },
-            textAlign: TextAlign.start,
             style: TextStyles.normal16.copyWith(color: Colorclass.brown),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: TextStyles.hint14.copyWith(color: Colorclass.grey),
+              hintStyle: TextStyles.hint14.copyWith(color: Colorclass.addicon),
               border: InputBorder.none,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
@@ -315,7 +307,6 @@ class _ProfileState extends State<Profile> {
     );
   }
 
-  // مكون بناء مستطيل الوضع Mode مع السويتش
   Widget _buildModeSwitch() {
     return Container(
       height: 50,
@@ -355,7 +346,6 @@ class _ProfileState extends State<Profile> {
     );
   }
 
-  // مستطيل Log Out
   Widget _buildLogoutButton() {
     return Container(
       height: 50,
@@ -373,7 +363,6 @@ class _ProfileState extends State<Profile> {
     );
   }
 
-  // نص Delete Your Account
   Widget _buildDeleteAccountText() {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0, right: 16.0),
