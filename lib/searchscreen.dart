@@ -1,3 +1,6 @@
+import 'package:bookbloom/mainpage.dart';
+import 'package:bookbloom/readbookScreen.dart';
+import 'package:bookbloom/readingprofile.dart';
 import 'package:flutter/material.dart';
 import 'package:bookbloom/BaseClasses/colorclass.dart';
 import 'package:bookbloom/BaseClasses/textclass.dart';
@@ -16,12 +19,6 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // appBar: AppBar(
-      //   backgroundColor: Colorclass.white,
-      //   elevation: 0,
-      //   toolbarHeight: 80,
-      //   title:
-      // ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -40,7 +37,19 @@ class _SearchScreenState extends State<SearchScreen> {
                   hintStyle:
                       TextStyles.normal16.copyWith(color: Colorclass.brown),
                   prefixIcon: const Icon(Icons.search, color: Colorclass.brown),
-                  suffixIcon: const Icon(Icons.close, color: Colorclass.brown),
+                  suffixIcon: GestureDetector(
+                    onTap: () {
+                      Navigator.push(context, MaterialPageRoute(
+                        builder: (context) {
+                          return const MainPage();
+                        },
+                      ));
+                    },
+                    child: const Icon(
+                      Icons.close,
+                      color: Colorclass.brown,
+                    ),
+                  ),
                   filled: true,
                   fillColor: Colorclass.grey,
                   contentPadding: const EdgeInsets.symmetric(vertical: 5),
@@ -84,11 +93,14 @@ class _SearchScreenState extends State<SearchScreen> {
             Expanded(
               child: ListView(
                 children: [
-                  _bookItem("images/book1.png", Textclass.Book, Textclass.Author),
+                  _bookItem(
+                      "images/book1.png", Textclass.Book, Textclass.Author),
                   const Divider(color: Colorclass.grey),
-                  _bookItem("images/book2.png", Textclass.Book, Textclass.Author),
+                  _bookItem(
+                      "images/book2.png", Textclass.Book, Textclass.Author),
                   const Divider(color: Colorclass.grey),
-                  _bookItem("images/book3.png", Textclass.Book, Textclass.Author),
+                  _bookItem(
+                      "images/book3.png", Textclass.Book, Textclass.Author),
                 ],
               ),
             ),
@@ -123,41 +135,53 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _bookItem(String imagePath, String title, String author) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Container(
-          width: 80,
-          height: 100,
-          decoration: BoxDecoration(
-            color: Colors.grey,
-            borderRadius: BorderRadius.circular(8),
-            image: DecorationImage(
-              image: AssetImage(imagePath),
-              fit: BoxFit.cover,
+    return GestureDetector(
+      onTap: () {
+        // الانتقال إلى صفحة قراءة الكتاب عند الضغط
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const Readingprofile(),
+          ),
+        );
+      },
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 80,
+            height: 100,
+            decoration: BoxDecoration(
+              color: Colors.grey,
+              borderRadius: BorderRadius.circular(8),
+              image: DecorationImage(
+                image: AssetImage(imagePath),
+                fit: BoxFit.cover,
+              ),
             ),
           ),
-        ),
-        const SizedBox(width: 16),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: TextStyles.Bold16.copyWith(color: Colorclass.brown),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              author,
-              style: TextStyles.normal16.copyWith(color: Colorclass.lightgray),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ],
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyles.Bold16.copyWith(color: Colorclass.brown),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                author,
+                style:
+                    TextStyles.normal16.copyWith(color: Colorclass.lightgray),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
