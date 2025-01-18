@@ -1,8 +1,10 @@
+import 'package:bookbloom/HomeScreen.dart';
 import 'package:bookbloom/SplachScreen.dart';
 import 'package:bookbloom/WriteStoryScreen.dart';
 import 'package:bookbloom/mainpage.dart';
 import 'package:bookbloom/profile.dart';
 import 'package:bookbloom/readingprofile.dart';
+import 'package:bookbloom/resetpassword.dart';
 import 'package:bookbloom/searchscreen.dart';
 import 'package:bookbloom/shelfbook.dart';
 import 'package:bookbloom/writeingspaceScreen.dart';
@@ -19,7 +21,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: Splachscreen(),
+      home: Splachscreen()
     );
   }
 }

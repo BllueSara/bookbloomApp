@@ -1,7 +1,9 @@
 import 'package:bookbloom/BaseClasses/ColorClass.dart';
 import 'package:bookbloom/BaseClasses/TextClass.dart';
 import 'package:bookbloom/BaseClasses/TextStyleClass.dart';
+import 'package:bookbloom/profile.dart';
 import 'package:bookbloom/readbookScreen.dart';
+import 'package:bookbloom/searchscreen.dart';
 
 import 'package:flutter/material.dart';
 
@@ -30,13 +32,23 @@ class _HomePageState extends State<HomePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    const CircleAvatar(
-                      radius: 20,
-                      backgroundImage:
-                          AssetImage('images/avatar1.png'), // صورة البروفايل
+                    const SizedBox(height: 20),
+                    GestureDetector(
+                      onTap: () {
+                        // الانتقال إلى صفحة البروفايل عند الضغط
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                const Profile(), // صفحة البروفايل
+                          ),
+                        );
+                      },
+                      child: const CircleAvatar(
+                        radius: 20,
+                        backgroundImage:
+                            AssetImage('images/avatar1.png'), // صورة البروفايل
+                      ),
                     ),
                     const SizedBox(height: 15),
                     Text(
@@ -44,55 +56,65 @@ class _HomePageState extends State<HomePage> {
                       style:
                           TextStyles.Bold30.copyWith(color: Colorclass.brown),
                     ),
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    // تعديل مربع البحث ليظهر في المنتصف
+                    const SizedBox(height: 20),
+                    // مربع البحث
                     Padding(
                       padding: const EdgeInsets.only(left: 15, right: 30),
                       child: Align(
-                        alignment: Alignment.center, // محاذاة المربع في المنتصف
-                        child: Container(
-                          constraints: const BoxConstraints(
-                            minHeight: 30, // ارتفاع أقل
-                            maxHeight: 32, // ارتفاع ثابت
-                          ),
-                          child: TextField(
-                            decoration: InputDecoration(
-                              hintText: Textclass.author,
-                              hintStyle: TextStyles.normal16.copyWith(
-                                  color: Colorclass.brown), // استدعاء التنسيق
-                              prefixIcon: const Icon(Icons.search,
-                                  color: Colorclass.brown),
-                              suffixIcon: const Icon(Icons.close,
-                                  color: Colorclass.brown),
-                              filled: true,
-                              fillColor: Colorclass.grey,
-                              contentPadding: const EdgeInsets.symmetric(
-                                  vertical: 5), // تعديل المحاذاة الرأسية
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
+                        alignment: Alignment.center,
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.push(context, MaterialPageRoute(
+                              builder: (context) {
+                                return const SearchScreen();
+                              },
+                            ));
+                          },
+                          child: Container(
+                            constraints: const BoxConstraints(
+                              minHeight: 30,
+                              maxHeight: 32,
                             ),
-                            style: const TextStyle(fontSize: 14), // حجم النص
-                            textAlignVertical:
-                                TextAlignVertical.center, // محاذاة النص عمودياً
+                            decoration: BoxDecoration(
+                              color: Colorclass.grey,
+                              borderRadius: BorderRadius.circular(8),
+                              border:
+                                  Border.all(color: Colors.black), // حدود شفافة
+                            ),
+                            child: Row(
+                              children: [
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 8),
+                                  child: Icon(Icons.search,
+                                      color: Colorclass.brown),
+                                ),
+                                Expanded(
+                                  child: Text(
+                                    Textclass.author,
+                                    style: TextStyles.normal16
+                                        .copyWith(color: Colorclass.brown),
+                                  ),
+                                ),
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 8),
+                                  child: Icon(Icons.close,
+                                      color: Colorclass.brown),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(
-                      height: 20,
-                    ),
+                    const SizedBox(height: 20),
                     const TabBar(
                       labelColor: Colorclass.brown,
                       unselectedLabelColor: Colorclass.brown,
                       isScrollable: true,
                       indicatorColor: Colorclass.brown,
                       dividerColor: Colorclass.white,
-                      indicatorWeight: 3.0, // سمك الخط تحت الكلمة
-                      indicatorPadding:
-                          EdgeInsets.only(bottom: 15), // محاذاة الخط للكلمة
+                      indicatorWeight: 3.0,
+                      indicatorPadding: EdgeInsets.only(bottom: 15),
                       tabs: [
                         Tab(text: 'Novel'),
                         Tab(text: 'Self-love'),
@@ -117,12 +139,11 @@ class _HomePageState extends State<HomePage> {
                     decoration: const BoxDecoration(
                       color: Colorclass.gbrown,
                       borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(30), // الحواف العلوية اليسرى
-                        topRight: Radius.circular(30), // الحواف العلوية اليمنى
+                        topLeft: Radius.circular(30),
+                        topRight: Radius.circular(30),
                       ),
                     ),
-                    margin: const EdgeInsets.only(
-                        bottom: 80), // مساحة للـ BottomNavigationBar
+                    margin: const EdgeInsets.only(bottom: 80),
                   ),
                   // محتوى GridView
                   Padding(
@@ -131,12 +152,12 @@ class _HomePageState extends State<HomePage> {
                     child: GridView.builder(
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2, // عرض كتابين في كل صف
+                        crossAxisCount: 2,
                         crossAxisSpacing: 16,
                         mainAxisSpacing: 16,
-                        childAspectRatio: 2 / 3, // النسبة بين العرض والارتفاع
+                        childAspectRatio: 2 / 3,
                       ),
-                      itemCount: 6, // عدد الكتب
+                      itemCount: 6,
                       itemBuilder: (context, index) {
                         return GestureDetector(
                           onTap: () {
@@ -153,8 +174,8 @@ class _HomePageState extends State<HomePage> {
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(16),
                               image: DecorationImage(
-                                image: AssetImage(
-                                    'images/book${index + 1}.png'), // صورة الكتاب
+                                image:
+                                    AssetImage('images/book${index + 1}.png'),
                                 fit: BoxFit.cover,
                               ),
                             ),

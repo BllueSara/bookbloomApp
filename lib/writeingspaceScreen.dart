@@ -109,25 +109,131 @@ class _WriteingspacescreenState extends State<Writeingspacescreen> {
   }
 
   void _showCategorySelection(BuildContext context) {
-    // Example for category selection
-    showModalBottomSheet(
+    showDialog(
       context: context,
       builder: (context) {
-        return ListView(
-          children: ['Category 1', 'Category 2', 'Category 3'].map((category) {
-            return ListTile(
-              title: Text(category),
-              onTap: () {
-                setState(() {
-                  selectedCategories.add(category);
-                });
+        return AlertDialog(
+          title: const Text(
+            Textclass.Category,
+            style: TextStyles.Bold18,
+          ),
+          content: StatefulBuilder(
+            builder: (context, setState) {
+              return SingleChildScrollView(
+                // إضافة هذه السطر لجعل المحتوى قابلًا للتمرير
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CheckboxListTile(
+                      title: const Text('Novel'),
+                      activeColor: Colorclass.gbrown,
+                      value: selectedCategories.contains('Novel'),
+                      onChanged: (value) {
+                        _toggleCategorySelection('Novel', value);
+                        setState(() {});
+                      },
+                    ),
+                    CheckboxListTile(
+                      title: const Text('Self-love'),
+                      activeColor: Colorclass.gbrown,
+                      value: selectedCategories.contains('Self-love'),
+                      onChanged: (value) {
+                        _toggleCategorySelection('Self-love', value);
+                        setState(() {});
+                      },
+                    ),
+                    CheckboxListTile(
+                      title: const Text('Science'),
+                      activeColor: Colorclass.gbrown,
+                      value: selectedCategories.contains('Science'),
+                      onChanged: (value) {
+                        _toggleCategorySelection('Science', value);
+                        setState(() {});
+                      },
+                    ),
+                    CheckboxListTile(
+                      title: const Text('Romance'),
+                      activeColor: Colorclass.gbrown,
+                      value: selectedCategories.contains('Romance'),
+                      onChanged: (value) {
+                        _toggleCategorySelection('Romance', value);
+                        setState(() {});
+                      },
+                    ),
+                    CheckboxListTile(
+                      activeColor: Colorclass.gbrown,
+                      title: const Text('Tragedy'),
+                      value: selectedCategories.contains('Tragedy'),
+                      onChanged: (value) {
+                        _toggleCategorySelection('Tragedy', value);
+                        setState(() {});
+                      },
+                    ),
+
+                    // "Other" option
+                    CheckboxListTile(
+                      title: const Text('Other'),
+                      activeColor: Colorclass.gbrown,
+                      value: selectedCategories.contains('Other'),
+                      onChanged: (value) {
+                        _toggleCategorySelection('Other', value);
+                        setState(() {});
+                      },
+                    ),
+
+                    // Show input field if "Other" is selected
+                    if (selectedCategories.contains('Other'))
+                      TextField(
+                        decoration: const InputDecoration(
+                          hintText: 'Write Your Category Here',
+                          border: UnderlineInputBorder(
+                            borderSide: BorderSide(
+                                color: Colorclass
+                                    .brown), // تغيير لون الخط عند التركيز
+                          ),
+                          focusedBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(
+                                color: Colorclass.brown), // اللون عند التركيز
+                          ),
+                          enabledBorder: UnderlineInputBorder(
+                            borderSide: BorderSide(
+                                color: Colorclass
+                                    .brown), // اللون عند التفاعل دون التركيز
+                          ),
+                        ),
+                        onChanged: (value) {
+                          // Handle user input for 'Other'
+                        },
+                      ),
+                  ],
+                ),
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
                 Navigator.pop(context);
               },
-            );
-          }).toList(),
+              child: Text(
+                'save',
+                style: TextStyles.Bold16.copyWith(color: Colorclass.brown),
+              ),
+            ),
+          ],
         );
       },
     );
+  }
+
+  void _toggleCategorySelection(String category, bool? isSelected) {
+    setState(() {
+      if (isSelected == true) {
+        selectedCategories.add(category);
+      } else {
+        selectedCategories.remove(category);
+      }
+    });
   }
 
   @override
