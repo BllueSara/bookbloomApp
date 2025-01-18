@@ -1,9 +1,9 @@
 import 'package:bookbloom/BaseClasses/ColorClass.dart';
 import 'package:bookbloom/BaseClasses/TextClass.dart';
 import 'package:bookbloom/BaseClasses/TextStyleClass.dart';
+import 'package:bookbloom/LoginScreen.dart';
 import 'package:bookbloom/ShapesClasses/LoginShape.dart';
 import 'package:flutter/material.dart';
-import 'SignUpScreen.dart';
 
 class Resetpassword extends StatefulWidget {
   const Resetpassword({super.key});
@@ -61,12 +61,15 @@ class _ResetpasswordState extends State<Resetpassword> {
                 ),
               ),
             ),
-            const SizedBox(
-              height: 12,
-            ),
+            const SizedBox(height: 12),
             InkWell(
               onTap: () {
-                Navigator.pop(context); // إغلاق الـ BottomSheet عند الضغط
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const Loginscreen(),
+                  ),
+                );
               },
               child: Container(
                 height: 40,
@@ -113,99 +116,120 @@ class _ResetpasswordState extends State<Resetpassword> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colorclass.white,
-      body: SingleChildScrollView(
-        child: Stack(
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Transform.translate(
-                  offset: const Offset(70, 7),
-                  child: CustomPaint(
-                    size: const Size(307, 231),
-                    painter: RPSSCustomPainter(),
+      body: Stack(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // الرسمة والسهم في نفس المحاذاة
+              Stack(
+                children: [
+                  Transform.translate(
+                    offset: const Offset(70, 7),
+                    child: CustomPaint(
+                      size: const Size(307, 231),
+                      painter: RPSSCustomPainter(),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        Textclass.ForgetPass,
-                        style: TextStyles.Bold30,
+                  Positioned(
+                    left: 16,
+                    top: 30,
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.keyboard_backspace,
+                        color: Colorclass.dustyPink,
+                        size: 40,
                       ),
-                      const SizedBox(height: 5),
-                      const Text(
-                        Textclass.reset,
-                        style: TextStyles.normal16,
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => Loginscreen(),
+                        ),
+                      );
+                    },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      Textclass.ForgetPass,
+                      style: TextStyles.Bold30,
+                    ),
+                    const SizedBox(height: 5),
+                    const Text(
+                      Textclass.reset,
+                      style: TextStyles.normal16,
+                    ),
+                    const SizedBox(height: 40),
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: Colorclass.gradient,
+                        borderRadius: BorderRadius.circular(30),
                       ),
-                      const SizedBox(height: 40),
-                      Container(
+                      padding: const EdgeInsets.all(5),
+                      child: Container(
                         decoration: BoxDecoration(
-                          gradient: Colorclass.gradient,
+                          color: Colorclass.white,
                           borderRadius: BorderRadius.circular(30),
                         ),
-                        padding: const EdgeInsets.all(5),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colorclass.white,
-                            borderRadius: BorderRadius.circular(30),
+                        child: TextField(
+                          decoration: InputDecoration(
+                            hintText: Textclass.Email,
+                            hintStyle: TextStyles.normal16,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(30),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding:
+                                const EdgeInsets.symmetric(horizontal: 20),
                           ),
-                          child: TextField(
-                            decoration: InputDecoration(
-                              hintText: Textclass.Email,
-                              hintStyle: TextStyles.normal16,
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                                borderSide: BorderSide.none,
-                              ),
-                              contentPadding:
-                                  const EdgeInsets.symmetric(horizontal: 20),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 170),
+                    Align(
+                      alignment: Alignment.center,
+                      child: Container(
+                        height: 60,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(50),
+                          gradient: const RadialGradient(
+                            colors: [Colorclass.dustyPink, Colorclass.brown],
+                            center: Alignment.centerRight,
+                            radius: 10,
+                            stops: [0.1, .7],
+                          ),
+                        ),
+                        child: MaterialButton(
+                          onPressed: () {
+                            _showOverlay(context); // عرض BottomSheet عند الضغط
+                          },
+                          child: const Text(
+                            Textclass.Continue,
+                            style: TextStyle(
+                              color: Colorclass.white,
+                              fontSize: 30,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 170),
-                      Align(
-                        alignment: Alignment.center,
-                        child: Container(
-                          height: 60,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(50),
-                            gradient: const RadialGradient(
-                              colors: [Colorclass.dustyPink, Colorclass.brown],
-                              center: Alignment.centerRight,
-                              radius: 10,
-                              stops: [0.1, .7],
-                            ),
-                          ),
-                          child: MaterialButton(
-                            onPressed: () {
-                              _showOverlay(
-                                  context); // عرض BottomSheet عند الضغط
-                            },
-                            child: const Text(
-                              Textclass.Continue,
-                              style: TextStyle(
-                                color: Colorclass.white,
-                                fontSize: 30,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
-   }
+}
