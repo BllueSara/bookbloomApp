@@ -1,26 +1,29 @@
-import 'package:bookbloom/mainpage.dart';
-import 'package:bookbloom/readbookScreen.dart';
-import 'package:bookbloom/readingprofile.dart';
-import 'package:flutter/material.dart';
-import 'package:bookbloom/BaseClasses/colorclass.dart';
-import 'package:bookbloom/BaseClasses/textclass.dart';
+import 'package:bookbloom/BaseClasses/ColorClass.dart';
+import 'package:bookbloom/BaseClasses/TextClass.dart';
 import 'package:bookbloom/BaseClasses/TextStyleClass.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
-class SearchScreen extends StatefulWidget {
-  const SearchScreen({super.key});
+class Readingprofile extends StatefulWidget {
+  const Readingprofile({super.key});
 
   @override
-  _SearchScreenState createState() => _SearchScreenState();
+  State<Readingprofile> createState() => _ReadingprofileState();
 }
 
-class _SearchScreenState extends State<SearchScreen> {
-  String selectedFilter = Textclass.Both;
+class _ReadingprofileState extends State<Readingprofile> {
+  final List<String> Author_Books = [
+    'images/book1.png',
+    'images/book2.png',
+  ];
+  final List<String> Author_Lists = [
+    'images/book1.png',
+    'images/book2.png',
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-<<<<<<< HEAD
-      backgroundColor: Colorclass.white,
       appBar: AppBar(
           title: const Text(
             Textclass.Willo34,
@@ -32,170 +35,98 @@ class _SearchScreenState extends State<SearchScreen> {
           forceMaterialTransparency: true,
           centerTitle: true),
       body: SingleChildScrollView(
-=======
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
->>>>>>> 87e86847da3d24befaa971400c2b6c171022d5a8
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const SizedBox(
-              height: 50,
-            ),
-            Container(
-              constraints: const BoxConstraints(
-                minHeight: 30,
-                maxHeight: 50,
-              ),
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: Textclass.author,
-                  hintStyle:
-                      TextStyles.normal16.copyWith(color: Colorclass.brown),
-                  prefixIcon: const Icon(Icons.search, color: Colorclass.brown),
-                  suffixIcon: GestureDetector(
-                    onTap: () {
-                      Navigator.push(context, MaterialPageRoute(
-                        builder: (context) {
-                          return const MainPage();
-                        },
-                      ));
-                    },
-                    child: const Icon(
-                      Icons.close,
-                      color: Colorclass.brown,
-                    ),
-                  ),
-                  filled: true,
-                  fillColor: Colorclass.grey,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 5),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Colors.transparent),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: const BorderSide(color: Colorclass.brown),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide:
-                        const BorderSide(color: Colorclass.brown, width: 1.5),
-                  ),
-                ),
-                style: const TextStyle(fontSize: 14),
-                textAlignVertical: TextAlignVertical.center,
-              ),
-            ),
-            const SizedBox(
-              height: 20,
-            ),
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colorclass.grey,
-                borderRadius: BorderRadius.circular(30),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _filterButton(Textclass.Both),
-                  _filterButton(Textclass.Author),
-                  _filterButton(Textclass.Title1),
-                ],
-              ),
+            const CircleAvatar(
+              backgroundImage: AssetImage('images/avatar2.png'),
+              radius: 50,
             ),
             const SizedBox(height: 20),
-            Expanded(
-              child: ListView(
-                children: [
-                  _bookItem(
-                      "images/book1.png", Textclass.Book, Textclass.Author),
-                  const Divider(color: Colorclass.grey),
-                  _bookItem(
-                      "images/book2.png", Textclass.Book, Textclass.Author),
-                  const Divider(color: Colorclass.grey),
-                  _bookItem(
-                      "images/book3.png", Textclass.Book, Textclass.Author),
-                ],
+            const Text(
+              Textclass.William,
+              style: TextStyles.Bold18,
+            ),
+            const SizedBox(height: 30),
+            const Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Text(
+                  Textclass.Book,
+                  style: TextStyles.normal16,
+                ),
+                Text(
+                  Textclass.Readers,
+                  style: TextStyles.normal16,
+                ),
+              ],
+            ),
+            const SizedBox(height: 15),
+            Transform.translate(
+              offset: const Offset(-120, 0),
+              child: const Text(
+                Textclass.AuthorBooks,
+                style: TextStyles.Bold18,
+                textAlign: TextAlign.left,
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 180,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: Author_Books.length,
+                itemBuilder: (context, index) {
+                  return Container(
+                    width: 120,
+                    height: 180,
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: Colorclass.grey,
+                      borderRadius: BorderRadius.circular(16),
+                      image: DecorationImage(
+                        image: AssetImage(Author_Books[index]),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 30),
+            Transform.translate(
+              offset: const Offset(-120, 0),
+              child: const Text(
+                Textclass.AuthorList,
+                style: TextStyles.Bold18,
+                textAlign: TextAlign.left,
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 180,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: Author_Lists.length,
+                itemBuilder: (context, index) {
+                  return Container(
+                    width: 120,
+                    height: 180,
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: Colorclass.grey,
+                      borderRadius: BorderRadius.circular(16),
+                      image: DecorationImage(
+                        image: AssetImage(Author_Lists[index]),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _filterButton(String text) {
-    bool isActive = selectedFilter == text;
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedFilter = text;
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-        decoration: BoxDecoration(
-          color: isActive ? Colorclass.white : Colorclass.grey,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          text,
-          style: TextStyles.normal16.copyWith(
-            color: isActive ? Colorclass.brown : Colorclass.lightgray,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _bookItem(String imagePath, String title, String author) {
-    return GestureDetector(
-      onTap: () {
-        // الانتقال إلى صفحة قراءة الكتاب عند الضغط
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) =>  Readingprofile(),
-          ),
-        );
-      },
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            width: 80,
-            height: 100,
-            decoration: BoxDecoration(
-              color: Colors.grey,
-              borderRadius: BorderRadius.circular(8),
-              image: DecorationImage(
-                image: AssetImage(imagePath),
-                fit: BoxFit.cover,
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: TextStyles.Bold16.copyWith(color: Colorclass.brown),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                author,
-                style:
-                    TextStyles.normal16.copyWith(color: Colorclass.lightgray),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }
