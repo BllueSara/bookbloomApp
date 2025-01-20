@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:bookbloom/BaseClasses/ColorClass.dart';
@@ -9,7 +11,7 @@ import 'package:bookbloom/mainpage.dart';
 import 'package:bookbloom/resetpassword.dart';
 
 class Loginscreen extends StatefulWidget {
-  Loginscreen({super.key});
+  const Loginscreen({super.key});
 
   @override
   State<Loginscreen> createState() => _LoginscreenState();
@@ -19,6 +21,31 @@ class _LoginscreenState extends State<Loginscreen> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   bool obscureText = true; // To manage password visibility
+  StreamSubscription<User?>? authSubscription; // متغير لتخزين الاشتراك
+
+  @override
+  void initState() {
+    super.initState();
+
+    // حفظ الاشتراك في authStateChanges
+    authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (mounted && user != null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainPage()),
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    // إلغاء الاشتراك عند التخلص من الشاشة
+    authSubscription?.cancel();
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
   Future<void> _login(BuildContext context) async {
     try {
@@ -75,7 +102,7 @@ class _LoginscreenState extends State<Loginscreen> {
               height: 40,
               width: 120,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
+                gradient: const LinearGradient(
                   colors: [Colorclass.brown, Colorclass.dustyPink],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,

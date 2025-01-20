@@ -117,11 +117,7 @@ class _ResetpasswordState extends State<Resetpassword> {
   Future<void> _resetPassword(BuildContext context) async {
     final email = emailController.text.trim();
     if (email.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter your email address.'),
-        ),
-      );
+      _showErrorDialog(context, 'Please enter your email address.');
       return;
     }
 
@@ -129,12 +125,55 @@ class _ResetpasswordState extends State<Resetpassword> {
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
       _showOverlay(context); // عرض BottomSheet بعد نجاح العملية
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: ${e.toString()}'),
-        ),
-      );
+      _showErrorDialog(context, 'Error: ${e.toString()}');
     }
+  }
+
+// دالة عرض نافذة الخطأ (نفس تصميم نافذة الخطأ في Login)
+  void _showErrorDialog(BuildContext context, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colorclass.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              message,
+              style: TextStyles.normal18.copyWith(
+                color: Colorclass.brown, // النص باللون البني
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            Container(
+              height: 40,
+              width: 120,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colorclass.brown, Colorclass.dustyPink],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: MaterialButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  'OK',
+                  style: TextStyles.normal16.copyWith(
+                    color: Colorclass.white, // النص باللون الأبيض
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
