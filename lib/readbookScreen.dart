@@ -4,6 +4,7 @@ import 'package:bookbloom/BaseClasses/TextStyleClass.dart';
 import 'package:bookbloom/mainpage.dart';
 import 'package:bookbloom/readingprofile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class ReadBookScreen extends StatefulWidget {
@@ -244,7 +245,7 @@ class _ReadBookScreenState extends State<ReadBookScreen> {
   }
 
   void _showAddDialog(BuildContext context) {
-    int? selectedOption; // متغير لتحديد الخيار المحدد
+    String? selectedShelf;
 
     showDialog(
       context: context,
@@ -264,7 +265,7 @@ class _ReadBookScreenState extends State<ReadBookScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // رأس نافذة الحوار
+                    // Header
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -279,19 +280,18 @@ class _ReadBookScreenState extends State<ReadBookScreen> {
                           },
                         ),
                         GestureDetector(
-                          onTap: selectedOption != null
+                          onTap: selectedShelf != null
                               ? () {
-                                  print("Selected option: $selectedOption");
+                                  _addBookToShelf(selectedShelf!);
                                   Navigator.of(context).pop();
                                 }
                               : null,
                           child: Padding(
-                            padding: const EdgeInsets.only(
-                                right: 16), // تعديل موضع كلمة Save
+                            padding: const EdgeInsets.only(right: 16),
                             child: Text(
                               Textclass.Save,
                               style: TextStyles.Bold16.copyWith(
-                                color: selectedOption != null
+                                color: selectedShelf != null
                                     ? Colorclass.brown
                                     : Colorclass.grey,
                               ),
@@ -300,89 +300,60 @@ class _ReadBookScreenState extends State<ReadBookScreen> {
                         ),
                       ],
                     ),
+                    // List of shelves from Firebase
+                    Expanded(
+                      child: StreamBuilder<QuerySnapshot>(
+                        stream: FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(FirebaseAuth.instance.currentUser?.uid)
+                            .collection('shelves')
+                            .snapshots(),
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                                child: CircularProgressIndicator());
+                          }
 
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            "Add to current reading",
-                            style: TextStyles.normal16.copyWith(
-                              color: Colorclass.brown,
-                            ),
-                          ),
-                        ),
-                        Radio<int>(
-                          value: 1,
-                          groupValue: selectedOption,
-                          fillColor: WidgetStateProperty.resolveWith<Color>(
-                            (states) => selectedOption == 1
-                                ? Colorclass.brown
-                                : Colorclass.grey,
-                          ),
-                          onChanged: (value) {
-                            setState(() {
-                              selectedOption = value!;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                    const Divider(color: Colorclass.brown),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            "Add to reading later",
-                            style: TextStyles.normal16.copyWith(
-                              color: Colorclass.brown,
-                            ),
-                          ),
-                        ),
-                        Radio<int>(
-                          value: 2,
-                          groupValue: selectedOption,
-                          fillColor: WidgetStateProperty.resolveWith<Color>(
-                            (states) => selectedOption == 2
-                                ? Colorclass.brown
-                                : Colorclass.grey,
-                          ),
-                          onChanged: (value) {
-                            setState(() {
-                              selectedOption = value!;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                    const Divider(color: Colorclass.brown),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            "",
-                            style: TextStyles.normal16.copyWith(
-                              color: Colorclass.brown,
-                            ),
-                          ),
-                        ),
-                        Radio<int>(
-                          value: 3,
-                          groupValue: selectedOption,
-                          fillColor: WidgetStateProperty.resolveWith<Color>(
-                            (states) => selectedOption == 3
-                                ? Colorclass.brown
-                                : Colorclass.grey,
-                          ),
-                          onChanged: (value) {
-                            setState(() {
-                              selectedOption = value!;
-                            });
-                          },
-                        ),
-                      ],
+                          if (!snapshot.hasData ||
+                              snapshot.data!.docs.isEmpty) {
+                            return Center(
+                              child: Text(
+                                "No shelves available",
+                                style: TextStyles.normal16
+                                    .copyWith(color: Colorclass.grey),
+                              ),
+                            );
+                          }
+
+                          final shelves = snapshot.data!.docs;
+
+                          return ListView.builder(
+                            itemCount: shelves.length,
+                            itemBuilder: (context, index) {
+                              final shelfName = shelves[index]['shelfName'];
+
+                              return ListTile(
+                                title: Text(
+                                  shelfName,
+                                  style: TextStyles.normal16
+                                      .copyWith(color: Colorclass.brown),
+                                ),
+                                trailing: Radio<String>(
+                                  value: shelfName,
+                                  groupValue: selectedShelf,
+                                  activeColor: Colorclass.brown,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      selectedShelf = value!;
+                                    });
+                                  },
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
                     ),
                   ],
                 ),
@@ -392,5 +363,43 @@ class _ReadBookScreenState extends State<ReadBookScreen> {
         );
       },
     );
+  }
+
+  void _addBookToShelf(String shelfName) async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+
+    if (userId != null) {
+      final shelfRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('shelves')
+          .doc(shelfName);
+
+      await shelfRef.update({
+        'books': FieldValue.arrayUnion([
+          {
+            'title': widget.title,
+            'imageUrl': widget.imageUrl,
+            'overview': widget.overview,
+            'author': widget.author,
+            'bio': widget.bio,
+          }
+        ]),
+      }).catchError((error) async {
+        // إذا لم يكن الرف موجودًا، يتم إنشاؤه
+        await shelfRef.set({
+          'shelfName': shelfName,
+          'books': [
+            {
+              'title': widget.title,
+              'imageUrl': widget.imageUrl,
+              'overview': widget.overview,
+              'author': widget.author,
+              'bio': widget.bio,
+            }
+          ],
+        });
+      });
+    }
   }
 }

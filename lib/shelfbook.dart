@@ -16,23 +16,14 @@ class _ShelfBookState extends State<ShelfBook> {
   final List<String> shelves = [];
   String displayName = '';
   String username = '';
-  List<String> storyTitle = [];
-  List<String> storyImages = [];
-  List<String> storyOverView = [];
-  List<String> storyauthorname = [];
-  int publishedBooksCount = 0;
-  List<String> storybio = [];
-
+  
   @override
   void initState() {
     super.initState();
     _fetchShelves();
-    _fetchUserData(); // جلب بيانات المستخدم
-    _fetchStoryData(); // جلب بيانات القصص
-    _fetchbioData(); // جلب بيانات السيرة الذاتية
+    _fetchUserData();
   }
 
-  // جلب بيانات المستخدم
   void _fetchUserData() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
@@ -43,43 +34,6 @@ class _ShelfBookState extends State<ShelfBook> {
       setState(() {
         displayName = userData['displayName'];
         username = userData['username'];
-      });
-    }
-  }
-
-  // جلب بيانات القصص
-  void _fetchStoryData() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      QuerySnapshot storyData = await FirebaseFirestore.instance
-          .collection('stories')
-          .where('authorId', isEqualTo: user.uid)
-          .get();
-
-      setState(() {
-        storyTitle =
-            storyData.docs.map((doc) => doc['title'] as String).toList();
-        storyImages =
-            storyData.docs.map((doc) => doc['imageUrl'] as String).toList();
-        storyOverView =
-            storyData.docs.map((doc) => doc['description'] as String).toList();
-        storyauthorname =
-            storyData.docs.map((doc) => doc['author'] as String).toList();
-        publishedBooksCount = storyData.docs.length;
-      });
-    }
-  }
-
-  // جلب بيانات السيرة الذاتية
-  void _fetchbioData() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      QuerySnapshot storyData = await FirebaseFirestore.instance
-          .collection('users')
-          .where('bio', isEqualTo: user.uid)
-          .get();
-      setState(() {
-        storybio = storyData.docs.map((doc) => doc['bio'] as String).toList();
       });
     }
   }
@@ -190,21 +144,11 @@ class _ShelfBookState extends State<ShelfBook> {
                                   Navigator.push(context, MaterialPageRoute(
                                     builder: (context) {
                                       return ReadBookScreen(
-                                        title: storyTitle.isNotEmpty
-                                            ? storyTitle[bookIndex]
-                                            : '',
-                                        overview: storyOverView.isNotEmpty
-                                            ? storyOverView[bookIndex]
-                                            : '',
-                                        bio: storybio.isNotEmpty
-                                            ? storybio[bookIndex]
-                                            : '',
-                                        author: storyauthorname.isNotEmpty
-                                            ? storyauthorname[bookIndex]
-                                            : '',
-                                        imageUrl: storyImages.isNotEmpty
-                                            ? storyImages[bookIndex]
-                                            : '',
+                                        title: book['title'] ?? '',
+                                        overview: book['overview'] ?? '',
+                                        bio: book['bio'] ?? '',
+                                        author: book['author'] ?? '',
+                                        imageUrl: book['imageUrl'] ?? '',
                                       );
                                     },
                                   ));
@@ -215,7 +159,7 @@ class _ShelfBookState extends State<ShelfBook> {
                                       const EdgeInsets.symmetric(horizontal: 8),
                                   decoration: BoxDecoration(
                                     image: DecorationImage(
-                                      image: NetworkImage(book['imageUrl']),
+                                      image: NetworkImage(book['imageUrl'] ?? ''),
                                       fit: BoxFit.cover,
                                     ),
                                     borderRadius: BorderRadius.circular(10),
