@@ -1,3 +1,6 @@
+import 'package:bookbloom/readbookScreen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:bookbloom/BaseClasses/ColorClass.dart';
 import 'package:bookbloom/BaseClasses/TextStyleClass.dart';
@@ -10,16 +13,114 @@ class ShelfBook extends StatefulWidget {
 }
 
 class _ShelfBookState extends State<ShelfBook> {
-  final List<String> shelves = [
-    "currently reading",
-    "reading later",
-    "my favourite"
-  ];
+  final List<String> shelves = [];
+  String displayName = '';
+  String username = '';
+  List<String> storyTitle = [];
+  List<String> storyImages = [];
+  List<String> storyOverView = [];
+  List<String> storyauthorname = [];
+  int publishedBooksCount = 0;
+  List<String> storybio = [];
 
-  void _addNewShelf(String shelfName) {
-    setState(() {
-      shelves.add(shelfName);
-    });
+  @override
+  void initState() {
+    super.initState();
+    _fetchShelves();
+    _fetchUserData(); // جلب بيانات المستخدم
+    _fetchStoryData(); // جلب بيانات القصص
+    _fetchbioData(); // جلب بيانات السيرة الذاتية
+  }
+
+  // جلب بيانات المستخدم
+  void _fetchUserData() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      DocumentSnapshot userData = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+      setState(() {
+        displayName = userData['displayName'];
+        username = userData['username'];
+      });
+    }
+  }
+
+  // جلب بيانات القصص
+  void _fetchStoryData() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      QuerySnapshot storyData = await FirebaseFirestore.instance
+          .collection('stories')
+          .where('authorId', isEqualTo: user.uid)
+          .get();
+
+      setState(() {
+        storyTitle =
+            storyData.docs.map((doc) => doc['title'] as String).toList();
+        storyImages =
+            storyData.docs.map((doc) => doc['imageUrl'] as String).toList();
+        storyOverView =
+            storyData.docs.map((doc) => doc['description'] as String).toList();
+        storyauthorname =
+            storyData.docs.map((doc) => doc['author'] as String).toList();
+        publishedBooksCount = storyData.docs.length;
+      });
+    }
+  }
+
+  // جلب بيانات السيرة الذاتية
+  void _fetchbioData() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      QuerySnapshot storyData = await FirebaseFirestore.instance
+          .collection('users')
+          .where('bio', isEqualTo: user.uid)
+          .get();
+      setState(() {
+        storybio = storyData.docs.map((doc) => doc['bio'] as String).toList();
+      });
+    }
+  }
+
+  void _fetchShelves() async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+
+    if (userId != null) {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('shelves')
+          .get();
+
+      setState(() {
+        shelves.clear();
+        for (var doc in snapshot.docs) {
+          shelves.add(doc.id);
+        }
+      });
+    }
+  }
+
+  void _addNewShelf(String shelfName) async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+
+    if (userId != null) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('shelves')
+          .doc(shelfName)
+          .set({
+        'shelfName': shelfName,
+        'books': [],
+      });
+
+      setState(() {
+        shelves.add(shelfName);
+      });
+    }
   }
 
   @override
@@ -30,7 +131,7 @@ class _ShelfBookState extends State<ShelfBook> {
         backgroundColor: Colorclass.white,
         elevation: 0,
         title: Text(
-          "my book shelf",
+          "My Book Shelf",
           style: TextStyles.Bold16.copyWith(color: Colorclass.brown),
         ),
         centerTitle: true,
@@ -51,18 +152,86 @@ class _ShelfBookState extends State<ShelfBook> {
         padding: const EdgeInsets.all(16.0),
         itemCount: shelves.length,
         itemBuilder: (context, index) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildSectionTitle(shelves[index]),
-              const SizedBox(height: 20),
-              _buildEmptyBookPlaceholder(),
-              const SizedBox(height: 20),
-            ],
+          return FutureBuilder<DocumentSnapshot>(
+            future: FirebaseFirestore.instance
+                .collection('users')
+                .doc(FirebaseAuth.instance.currentUser?.uid)
+                .collection('shelves')
+                .doc(shelves[index])
+                .get(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (!snapshot.hasData || snapshot.data == null) {
+                return const SizedBox();
+              }
+
+              final data = snapshot.data!.data() as Map<String, dynamic>;
+              final books = data['books'] as List<dynamic>;
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildSectionTitle(shelves[index]),
+                  const SizedBox(height: 20),
+                  books.isEmpty
+                      ? _buildEmptyBookPlaceholder()
+                      : SizedBox(
+                          height: 150,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: books.length,
+                            itemBuilder: (context, bookIndex) {
+                              final book = books[bookIndex];
+                              return GestureDetector(
+                                onTap: () {
+                                  Navigator.push(context, MaterialPageRoute(
+                                    builder: (context) {
+                                      return ReadBookScreen(
+                                        title: storyTitle.isNotEmpty
+                                            ? storyTitle[bookIndex]
+                                            : '',
+                                        overview: storyOverView.isNotEmpty
+                                            ? storyOverView[bookIndex]
+                                            : '',
+                                        bio: storybio.isNotEmpty
+                                            ? storybio[bookIndex]
+                                            : '',
+                                        author: storyauthorname.isNotEmpty
+                                            ? storyauthorname[bookIndex]
+                                            : '',
+                                        imageUrl: storyImages.isNotEmpty
+                                            ? storyImages[bookIndex]
+                                            : '',
+                                      );
+                                    },
+                                  ));
+                                },
+                                child: Container(
+                                  width: 100,
+                                  margin:
+                                      const EdgeInsets.symmetric(horizontal: 8),
+                                  decoration: BoxDecoration(
+                                    image: DecorationImage(
+                                      image: NetworkImage(book['imageUrl']),
+                                      fit: BoxFit.cover,
+                                    ),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                  const SizedBox(height: 20),
+                ],
+              );
+            },
           );
         },
       ),
-      
     );
   }
 
@@ -116,8 +285,8 @@ class _ShelfBookState extends State<ShelfBook> {
                 textAlign: TextAlign.center,
                 decoration: InputDecoration(
                   hintText: "Shelf name",
-                  hintStyle: TextStyles.normal18
-                      .copyWith(color: Colorclass.shelf),
+                  hintStyle:
+                      TextStyles.normal18.copyWith(color: Colorclass.shelf),
                   enabledBorder: const UnderlineInputBorder(
                     borderSide: BorderSide(color: Colorclass.grey),
                   ),
@@ -143,7 +312,7 @@ class _ShelfBookState extends State<ShelfBook> {
                   ),
                   child: Center(
                     child: Text(
-                      "create shelf",
+                      "Create Shelf",
                       style:
                           TextStyles.Bold16.copyWith(color: Colorclass.white),
                     ),

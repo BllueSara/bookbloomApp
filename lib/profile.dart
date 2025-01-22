@@ -23,35 +23,39 @@ class _ProfileState extends State<Profile> {
   bool isDarkMode = false; // الوضع الافتراضي (Light Mode)
   String selectedImage = ''; // لتخزين الصورة المختارة مؤقتًا
   String profilePicture = 'images/avatar1.png'; // الصورة الافتراضية
+  String bio = ''; // لتخزين وصف المستخدم
 
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _bioController = TextEditingController();
 
   // تحميل البيانات من Firestore
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData(); // تحميل بيانات المستخدم عند بدء التطبيق
+    _loadProfilePicture();
+  }
+
   Future<void> _loadUserData() async {
     User? user = FirebaseAuth.instance.currentUser;
+
     if (user != null) {
       var userData = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
           .get();
       setState(() {
-        displayName = user.displayName ?? "No Display Name";
+        displayName = userData['displayName'] ??
+            "No Display Name"; // تأكد من تحميل displayName من Firestore
         username = userData['username'] ?? "";
+        bio = userData['bio'] ?? ""; // تحميل الوصف
         email = user.email ?? "";
         _usernameController.text = username;
         _emailController.text = email;
+        _bioController.text = bio;
       });
     }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _loadUserData(); // تحميل بيانات المستخدم عند بدء التطبيق
-    _loadProfilePicture();
-    // تحميل بيانات المستخدم من Firestore
-    _loadDisplayName();
   }
 
   Future<void> _loadProfilePicture() async {
@@ -68,115 +72,93 @@ class _ProfileState extends State<Profile> {
   }
 
   // خاصية تعديل الاسم المعروض
-// تعديل خاصية تعديل الاسم المعروض مع حفظ الاسم محليًا
-// تعديل خاصية تعديل الاسم المعروض مع حفظ الاسم محليًا
-void _editDisplayName() {
-  final TextEditingController controller = TextEditingController(text: displayName);
-
-  showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: Text(
-          "Edit Display Name",
-          style: TextStyles.Bold16.copyWith(color: Colorclass.brown),
-        ),
-        content: TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Colorclass.brown),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: Colorclass.brown),
-            ),
-            hintText: "Enter new display name",
-            hintStyle: TextStyles.hint14.copyWith(color: Colorclass.grey),
+  void _editDisplayName() {
+    final TextEditingController controller =
+        TextEditingController(text: displayName);
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(
+            "Edit Display Name",
+            style: TextStyles.Bold16.copyWith(color: Colorclass.brown),
           ),
-        ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Container(
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colorclass.brown,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pop(); // إغلاق نافذة التعديل
-                      },
-                      child: Text(
-                        "Cancel",
-                        style: TextStyles.Bold16.copyWith(
-                            color: Colorclass.white),
+          content: TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: Colorclass.brown),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: const BorderSide(color: Colorclass.brown),
+              ),
+              hintText: "Enter new display name",
+              hintStyle: TextStyles.hint14.copyWith(color: Colorclass.grey),
+            ),
+          ),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colorclass.brown,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: Text(
+                          "Cancel",
+                          style: TextStyles.Bold16.copyWith(
+                              color: Colorclass.white),
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Container(
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: Colorclass.grey,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: TextButton(
-                      onPressed: () async {
-                        final newName = controller.text.trim();
-                        if (newName.isNotEmpty) {
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Container(
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: Colorclass.grey,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: TextButton(
+                        onPressed: () {
                           setState(() {
-                            displayName = newName; // تحديث الاسم
+                            displayName = controller.text; // تحديث الاسم
                           });
-
-                          // حفظ الاسم في Firestore
-                          await FirebaseFirestore.instance
+                          FirebaseFirestore.instance
                               .collection('users')
                               .doc(FirebaseAuth.instance.currentUser!.uid)
                               .update({'displayName': displayName});
 
-                          // حفظ الاسم محليًا باستخدام SharedPreferences
-                          final prefs = await SharedPreferences.getInstance();
-                          await prefs.setString('displayName', displayName);
-
-                          Navigator.of(context).pop(); // إغلاق نافذة التعديل
-                        }
-                      },
-                      child: Text(
-                        "Save",
-                        style: TextStyles.Bold16.copyWith(
-                            color: Colorclass.brown),
+                          Navigator.of(context).pop();
+                        },
+                        child: Text(
+                          "Save",
+                          style: TextStyles.Bold16.copyWith(
+                              color: Colorclass.brown),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
-      );
-    },
-  );
-}
-
-
-
-// دالة لتحميل الاسم من SharedPreferences
-Future<void> _loadDisplayName() async {
-  final prefs = await SharedPreferences.getInstance();
-  setState(() {
-    displayName = prefs.getString('displayName') ?? "No Display Name";
-  });
-}
-
+          ],
+        );
+      },
+    );
+  }
 
   // خاصية تغيير صورة العرض
   void _changeProfilePicture() async {
@@ -307,89 +289,146 @@ Future<void> _loadDisplayName() async {
 
   // خاصية التأكيد عند تسجيل الخروج أو حذف الحساب
   void _confirmAction(String action) {
-    String title = action == "logout" ? "Log Out" : "Delete Account";
-    String content = action == "logout"
-        ? "Are you sure you want to log out?"
-        : "Are you sure you want to delete your account?";
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(
-            title,
-            style: TextStyles.Bold16.copyWith(color: Colorclass.brown),
-          ),
-          content: Text(
-            content,
-            style: TextStyles.normal16.copyWith(color: Colorclass.brown),
-          ),
-          actions: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // زر Cancel باللون البني
-                  Expanded(
-                    child: Container(
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colorclass.brown,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop();
-                        },
-                        child: Text(
-                          "Cancel",
-                          style: TextStyles.Bold16.copyWith(
-                            color: Colorclass.white,
+    if (action == "logout") {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text(
+              "Log Out",
+              style: TextStyles.Bold18.copyWith(color: Colorclass.brown),
+            ),
+            content: Text(
+              "Are you sure you want to log out?",
+              style: TextStyles.normal16.copyWith(color: Colorclass.brown),
+            ),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // زر Cancel باللون البني
+                    Expanded(
+                      child: Container(
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colorclass.brown,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop(); // إغلاق النافذة
+                          },
+                          child: Text(
+                            "Cancel",
+                            style: TextStyles.Bold16.copyWith(
+                                color: Colorclass.white),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  // زر Log Out أو Delete باللون الرمادي
-                  Expanded(
-                    child: Container(
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colorclass.grey,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: TextButton(
-                        onPressed: () async {
-                          Navigator.of(context).pop(); // إغلاق النافذة
-                          if (action == "logout") {
+                    const SizedBox(width: 10),
+                    // زر Log Out باللون الرمادي
+                    Expanded(
+                      child: Container(
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colorclass.grey,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: TextButton(
+                          onPressed: () async {
                             await FirebaseAuth.instance.signOut();
                             Navigator.of(context).pushReplacement(
-                              MaterialPageRoute(
-                                builder: (context) => const Splachscreen(),
-                              ),
-                            );
-                          } else {
-                            _showPasswordDialog(); // عرض نافذة طلب كلمة المرور
-                          }
-                        },
-                        child: Text(
-                          action == "logout" ? "Log Out" : "Delete",
-                          style: TextStyles.Bold16.copyWith(
-                            color: Colorclass.brown,
+                                MaterialPageRoute(
+                                    builder: (context) =>
+                                        const Splachscreen()));
+                          },
+                          child: Text(
+                            "Log Out",
+                            style: TextStyles.Bold16.copyWith(
+                                color: Colorclass.brown),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+            ],
+          );
+        },
+      );
+    } else if (action == "delete") {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text(
+              "Delete Account",
+              style: TextStyles.Bold16.copyWith(color: Colorclass.brown),
             ),
-          ],
-        );
-      },
-    );
+            content: Text(
+              "Are you sure you want to delete your account?",
+              style: TextStyles.normal16.copyWith(color: Colorclass.brown),
+            ),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // زر Cancel باللون البني
+                    Expanded(
+                      child: Container(
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colorclass.brown,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop(); // إغلاق النافذة
+                          },
+                          child: Text(
+                            "Cancel",
+                            style: TextStyles.Bold16.copyWith(
+                                color: Colorclass.white),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    // زر Delete باللون الرمادي
+                    Expanded(
+                      child: Container(
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colorclass.grey,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop(); // إغلاق النافذة الأولى
+                            _showPasswordDialog(); // عرض نافذة المصادقة
+                          },
+                          child: Text(
+                            "Delete",
+                            style: TextStyles.Bold16.copyWith(
+                                color: Colorclass.brown),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    }
   }
 
 // عرض نافذة المصادقة لطلب كلمة المرور
@@ -536,7 +575,7 @@ Future<void> _loadDisplayName() async {
                 height: 40,
                 width: 120,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
+                  gradient: const LinearGradient(
                     colors: [Colorclass.brown, Colorclass.dustyPink],
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
@@ -654,6 +693,16 @@ Future<void> _loadDisplayName() async {
               ),
               const SizedBox(height: 20),
               _buildContainer(
+                "Bio",
+                bio,
+                const Icon(
+                  Icons.biotech,
+                  color: Colorclass.brown,
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              _buildContainer(
                 "Email",
                 email,
                 const Icon(
@@ -661,6 +710,7 @@ Future<void> _loadDisplayName() async {
                   color: Colorclass.brown,
                 ),
               ),
+
               const SizedBox(height: 20),
               _buildContainer(
                   "Password",
@@ -671,10 +721,6 @@ Future<void> _loadDisplayName() async {
                   ),
                   isPassword: true),
               const SizedBox(height: 30),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: _buildModeSwitch(),
-              ),
               const SizedBox(
                 height: 50,
               ), // المسافة لزر تسجيل الخروج
@@ -793,7 +839,16 @@ Future<void> _loadDisplayName() async {
                                 setState(() {
                                   displayName = newValue;
                                 });
+                              } else if (hint == "Bio") {
+                                await FirebaseFirestore.instance
+                                    .collection('users')
+                                    .doc(FirebaseAuth.instance.currentUser!.uid)
+                                    .update({'bio': newValue});
+                                setState(() {
+                                  bio = newValue;
+                                });
                               }
+
                               // إعادة تحميل البيانات
                               await _loadUserData();
                               Navigator.of(context).pop();
@@ -849,45 +904,6 @@ Future<void> _loadDisplayName() async {
                 ],
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildModeSwitch() {
-    return Container(
-      height: 50,
-      width: 150,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(25),
-        gradient: Colorclass.gradient,
-      ),
-      child: Center(
-        child: Container(
-          height: 40,
-          width: 140,
-          decoration: BoxDecoration(
-            color: Colorclass.white,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 16.0),
-                child: Text(
-                  "Mode",
-                  style: TextStyles.normal16.copyWith(color: Colorclass.brown),
-                ),
-              ),
-              Switch(
-                value: isDarkMode,
-                onChanged: _toggleDarkMode,
-                activeColor: Colorclass.brown,
-                inactiveThumbColor: Colorclass.grey,
-              ),
-            ],
           ),
         ),
       ),

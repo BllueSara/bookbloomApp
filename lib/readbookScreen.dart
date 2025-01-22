@@ -1,11 +1,25 @@
 import 'package:bookbloom/BaseClasses/ColorClass.dart';
 import 'package:bookbloom/BaseClasses/TextClass.dart';
 import 'package:bookbloom/BaseClasses/TextStyleClass.dart';
-import 'package:bookbloom/HomeScreen.dart';
+import 'package:bookbloom/mainpage.dart';
+import 'package:bookbloom/readingprofile.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
 class ReadBookScreen extends StatefulWidget {
-  const ReadBookScreen({super.key});
+  const ReadBookScreen({
+    super.key,
+    required this.title,
+    required this.imageUrl,
+    required this.overview,
+    required this.author,
+    required this.bio,
+  });
+  final String title;
+  final String imageUrl;
+  final String overview;
+  final String author;
+  final String bio;
 
   @override
   State<ReadBookScreen> createState() => _ReadBookScreenState();
@@ -48,16 +62,29 @@ class _ReadBookScreenState extends State<ReadBookScreen> {
                                   child: Column(
                                     children: [
                                       Text(
-                                        "Never Tell",
+                                        widget.title,
                                         style: TextStyles.Bold20.copyWith(
                                           color: Colorclass.brown,
                                         ),
                                       ),
                                       const SizedBox(height: 2),
-                                      Text(
-                                        "Author Name",
-                                        style: TextStyles.normal16.copyWith(
-                                          color: Colorclass.grey,
+                                      GestureDetector(
+                                        onTap: () {
+                                          Navigator.push(context,
+                                              MaterialPageRoute(
+                                            builder: (context) {
+                                              return Readingprofile(
+                                                authorId: widget
+                                                    .author, // تمرير معرّف الكاتب
+                                              );
+                                            },
+                                          ));
+                                        },
+                                        child: Text(
+                                          widget.author,
+                                          style: TextStyles.normal16.copyWith(
+                                            color: Colorclass.grey,
+                                          ),
                                         ),
                                       ),
                                       const SizedBox(height: 2),
@@ -103,21 +130,23 @@ class _ReadBookScreenState extends State<ReadBookScreen> {
                                         ),
                                         const SizedBox(height: 5),
                                         Text(
-                                          "[Author's Name] writes with a quiet\n passion, crafting stories that feel like\n gentle reflections of life. Their words \ninvite readers into vivid worlds filled \n with warmth and thoughtfulness.",
+                                          widget.bio.isNotEmpty
+                                              ? widget.bio
+                                              : "soory", // عرض رسالة في حالة عدم وجود bio
                                           style: TextStyles.hint14.copyWith(
                                             color: Colorclass.grey,
                                           ),
                                         ),
                                         const SizedBox(height: 16),
                                         Text(
-                                          "Overview",
+                                          'Overview',
                                           style: TextStyles.Bold18.copyWith(
                                             color: Colorclass.brown,
                                           ),
                                         ),
                                         const SizedBox(height: 8),
                                         Text(
-                                          '"Never Tell" is a quiet, introspective tale of longing\n and unspoken emotions. Through the struggles of\n distance, loss, and vulnerability, the protagonist \nseeks solace in music and fleeting moments of connection. It’s a story about what remains unsaid,\n the ache of solitude, and the hope for healing and\n understanding.',
+                                          widget.overview,
                                           style: TextStyles.hint14.copyWith(
                                             color: Colorclass.grey,
                                           ),
@@ -173,10 +202,8 @@ class _ReadBookScreenState extends State<ReadBookScreen> {
                 decoration: BoxDecoration(
                   color: Colorclass.dustyPink,
                   borderRadius: BorderRadius.circular(16),
-                  image: const DecorationImage(
-                    image: AssetImage('images/book.png'),
-                    fit: BoxFit.cover,
-                  ),
+                  image: DecorationImage(
+                      image: NetworkImage(widget.imageUrl), fit: BoxFit.cover),
                 ),
               ),
             ),
@@ -191,11 +218,8 @@ class _ReadBookScreenState extends State<ReadBookScreen> {
                   size: 40,
                 ),
                 onPressed: () {
-                  // يرجع المستخدم إلى صفحة الهوم
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const HomePage()),
-                  );
+                  // يرجع المستخدم إلى صفحة السابقة
+                  Navigator.pop(context);
                 },
               ),
             ),

@@ -1,13 +1,32 @@
 {
   "project_info": {
-    "project_number": "970999773474",
-    "project_id": "bookbloom-3afae",
-    "storage_bucket": "bookbloom-3afae.firebasestorage.app"
+    "project_number": "290100366647",
+    "project_id": "bookbloom-cf640",
+    "storage_bucket": "bookbloom-cf640.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:970999773474:android:065d6767e2d222153c0d7b",
+        "mobilesdk_app_id": "1:290100366647:android:ecb5f40ca0bda850aa5eb2",
+        "android_client_info": {
+          "package_name": "com.bookbloom"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA9CzFNvzeso29wTDrKFKJPDDlFd3ful7c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:290100366647:android:4ed15679765f3cfeaa5eb2",
         "android_client_info": {
           "package_name": "com.example.bookbloom"
         }
@@ -15,7 +34,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAAR3-s-jblF4NG-GOycLnIsyI3RZi8Z4k"
+          "current_key": "AIzaSyA9CzFNvzeso29wTDrKFKJPDDlFd3ful7c"
         }
       ],
       "services": {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bookbloom/LoginScreen.dart';
 import 'package:bookbloom/mainpage.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -20,7 +22,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
   String username = '';
   String email = '';
   String password = '';
+  String bio = '';
   bool obscurePassword = true;
+
+  StreamSubscription<User?>? authSubscription; // متغير لتخزين الاشتراك
+
+  @override
+  void initState() {
+    super.initState();
+
+    // حفظ الاشتراك في authStateChanges
+    authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (mounted && user != null) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainPage(index: 0,)),
+        );
+      }
+    });
+  }
 
   // Controllers for form fields
   TextEditingController displayNameController = TextEditingController();
@@ -28,7 +48,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
 
+  @override
+  void dispose() {
+    super.dispose();
+    authSubscription?.cancel();
+    emailController.dispose();
+    passwordController.dispose();
+    usernameController.dispose();
+    displayNameController.dispose();
+  }
+
   Future<void> signUp() async {
+    if (!mounted) return; // Make sure the widget is still mounted
     if (displayName.isEmpty) {
       _showErrorDialog('Please enter a display name.');
       return;
@@ -64,14 +95,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
         'displayName': displayName,
         'username': username,
         'email': email,
+        'bio': bio,
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      // Navigate to MainPage after successful sign up
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const MainPage()),
-      );
+      if (mounted) {
+        // Navigate to MainPage after successful sign up
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainPage(index: 0,)),
+        );
+      }
     } on FirebaseAuthException catch (e) {
       String errorMessage = '';
       if (e.code == 'email-already-in-use') {
@@ -253,15 +287,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    emailController.dispose();
-    passwordController.dispose();
-    usernameController.dispose();
-    displayNameController.dispose();
   }
 }
 

@@ -5,7 +5,9 @@ import 'package:bookbloom/writeingspaceScreen.dart';
 import 'package:flutter/material.dart';
 
 class MainPage extends StatefulWidget {
-  const MainPage({super.key});
+  final int index; // إضافة المعامل index
+
+  const MainPage({super.key, required this.index});
 
   @override
   State<MainPage> createState() => _MainPageState();
@@ -16,6 +18,8 @@ class _MainPageState extends State<MainPage> {
   @override
   void initState() {
     super.initState();
+    _currentIndex = widget.index;
+
     pages = [
       const HomePage(),
       const Writeingspacescreen(),

@@ -32,7 +32,7 @@ class _LoginscreenState extends State<Loginscreen> {
       if (mounted && user != null) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const MainPage()),
+          MaterialPageRoute(builder: (context) => const MainPage(index: 0,)),
         );
       }
     });
@@ -64,7 +64,7 @@ class _LoginscreenState extends State<Loginscreen> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const MainPage()),
+        MaterialPageRoute(builder: (context) => const MainPage(index: 0,)),
       );
     } on FirebaseAuthException catch (e) {
       if (e.code == 'user-not-found' || e.code == 'wrong-password') {
