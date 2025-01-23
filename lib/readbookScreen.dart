@@ -1,6 +1,7 @@
 import 'package:bookbloom/BaseClasses/ColorClass.dart';
 import 'package:bookbloom/BaseClasses/TextClass.dart';
 import 'package:bookbloom/BaseClasses/TextStyleClass.dart';
+import 'package:bookbloom/ReadingSpaceScreen.dart';
 import 'package:bookbloom/mainpage.dart';
 import 'package:bookbloom/readingprofile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -166,13 +167,23 @@ class _ReadBookScreenState extends State<ReadBookScreen> {
                           child: Center(
                             child: ElevatedButton(
                               onPressed: () {
-                                // أضف الإجراء هنا
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => Readingspacescreen(
+                                      storyId: widget
+                                          .title, // يمكنك تعديل هذا لتمرير الـ ID الفعلي للقصة
+                                      partTitle:
+                                          "Part 1", // يمكنك تغيير الجزء الافتراضي إذا لزم الأمر
+                                    ),
+                                  ),
+                                );
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colorclass.dustyPink,
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 12,
-                                  horizontal: 25, // عرض الزر محدود
+                                  horizontal: 25,
                                 ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(30),
@@ -242,6 +253,26 @@ class _ReadBookScreenState extends State<ReadBookScreen> {
         ),
       ),
     );
+  }
+
+  void _incrementReadersCount() async {
+    try {
+      final storyRef = FirebaseFirestore.instance
+          .collection('stories')
+          .doc(widget.title); // هنا تأكد من أن widget.title هو الـ ID للقصة
+
+      final storySnapshot = await storyRef.get();
+
+      if (storySnapshot.exists) {
+        final currentReadersCount = storySnapshot.data()?['readersCount'] ??
+            0; // الحصول على العدد الحالي
+
+        // تحديث عدد القراء
+        await storyRef.update({'readersCount': currentReadersCount + 1});
+      }
+    } catch (e) {
+      print("Error incrementing readers count: $e");
+    }
   }
 
   void _showAddDialog(BuildContext context) {

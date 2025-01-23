@@ -5,11 +5,12 @@ import 'package:bookbloom/BaseClasses/TextClass.dart';
 import 'package:bookbloom/BaseClasses/TextStyleClass.dart';
 import 'package:bookbloom/readbookScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class Readingprofile extends StatefulWidget {
-  final String authorId; // معرّف الكاتب الذي يتم تمريره
+  final String authorId; // معرّف الشخص الذي يتم تمريره
 
   const Readingprofile({super.key, required this.authorId});
 
@@ -30,12 +31,15 @@ class _ReadingprofileState extends State<Readingprofile> {
   List<String> storyauthorname = [];
   List<String> storybio = [];
 
+  bool isUser = false; // متغير للتحقق إذا كان الشخص هو مستخدم أو كاتب
+
   @override
   void initState() {
     super.initState();
-    _fetchAuthorIdAndData(); // جلب بيانات الكاتب
-    _fetchStoryData(); // جلب بيانات القصص التي كتبها الكاتب
+    _checkIfAuthorOrUser(); // التحقق إذا كان كاتبًا أو مستخدمًا
+    _fetchAuthorData(); // جلب بيانات الكتب
     _loadProfilePicture();
+    _fetchBooksFromShelves(); // استدعاء الكتب من الشيلف
   }
 
   Future<void> _loadProfilePicture() async {
@@ -46,54 +50,113 @@ class _ReadingprofileState extends State<Readingprofile> {
     });
   }
 
-  // جلب بيانات الكاتب من مجموعة users
-  void _fetchAuthorIdAndData() async {
-    // البحث عن المؤلف باستخدام الاسم للحصول على authorId
-    QuerySnapshot snapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .where('username', isEqualTo: widget.authorId) // البحث باستخدام الاسم
+  // التحقق إذا كان الشخص كاتبًا أو مستخدمًا
+  void _checkIfAuthorOrUser() async {
+    var authorQuery = await FirebaseFirestore.instance
+        .collection('stories')
+        .where('author', isEqualTo: widget.authorId) // استخدام المعرف
         .get();
 
-    if (snapshot.docs.isNotEmpty) {
-      // إذا تم العثور على المؤلف
-      DocumentSnapshot authorData = snapshot.docs.first;
+    if (authorQuery.docs.isNotEmpty) {
       setState(() {
-        displayName = authorData['displayName'] ?? 'Unknown Author';
-        username = authorData['username'] ?? 'Unknown';
-        // readersCount = authorData['readersCount'] ?? 0;
+        isUser = false; // هذا شخص كاتب
+        _fetchAuthorData();
+        _fetchUserData(); // جلب بيانات الكاتب
       });
     } else {
-      setState(() {
-        displayName = 'Unknown Author';
-        username = 'Unknown';
-        readersCount = 0;
-      });
-      print('No author found with the given name');
+      var userQuery = await FirebaseFirestore.instance
+          .collection('users')
+          .where('username', isEqualTo: widget.authorId) // استخدام المعرف
+          .get();
+
+      if (userQuery.docs.isNotEmpty) {
+        setState(() {
+          isUser = true; // هذا شخص مستخدم
+          _fetchUserData(); // جلب بيانات المستخدم
+        });
+      }
     }
   }
 
-  // جلب القصص التي كتبها الكاتب من مجموعة stories
-  void _fetchStoryData() async {
-    QuerySnapshot storyData = await FirebaseFirestore.instance
-        .collection('stories') // جلب البيانات من مجموعة 'stories'
-        .where('author', isEqualTo: widget.authorId) // استخدم المعرف الممرر
+  // جلب بيانات الكاتب
+  void _fetchAuthorData() async {
+    var authorData = await FirebaseFirestore.instance
+        .collection('stories')
+        .where('author', isEqualTo: widget.authorId)
         .get();
 
     setState(() {
-      storyTitle = storyData.docs.map((doc) => doc['title'] as String).toList();
+      storyTitle =
+          authorData.docs.map((doc) => doc['title'] as String).toList();
       storyImages =
-          storyData.docs.map((doc) => doc['imageUrl'] as String).toList();
+          authorData.docs.map((doc) => doc['imageUrl'] as String).toList();
       storyOverView =
-          storyData.docs.map((doc) => doc['description'] as String).toList();
+          authorData.docs.map((doc) => doc['description'] as String).toList();
       storyauthorname =
-          storyData.docs.map((doc) => doc['author'] as String).toList();
-      publishedBooksCount = storyData.docs.length;
+          authorData.docs.map((doc) => doc['author'] as String).toList();
+      publishedBooksCount = authorData.docs.length;
     });
+  }
+
+  // جلب بيانات المستخدم
+  void _fetchUserData() async {
+    var userData = await FirebaseFirestore.instance
+        .collection('users')
+        .where('username', isEqualTo: widget.authorId)
+        .get();
+
+    setState(() {
+      var user = userData.docs.first;
+      displayName = user['displayName'] ?? 'Unknown User';
+      username = user['username'] ?? 'Unknown';
+
+      // تحقق من وجود الحقل readersCount
+      readersCount = user.data().containsKey('readersCount')
+          ? user['readersCount']
+          : 0; // تعيين 0 إذا لم يكن الحقل موجودًا
+    });
+  }
+
+  // جلب الكتب من الشيلف
+  void _fetchBooksFromShelves() async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+
+    if (userId != null) {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('shelves')
+          .get();
+
+      List<Map<String, dynamic>> allBooks = [];
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final books = data['books'] as List<dynamic>? ?? [];
+        allBooks.addAll(books.map((book) => book as Map<String, dynamic>));
+      }
+
+      setState(() {
+        storyTitle
+            .addAll(allBooks.map((book) => book['title'] as String).toList());
+        storyImages.addAll(
+            allBooks.map((book) => book['imageUrl'] as String).toList());
+        storyOverView.addAll(
+            allBooks.map((book) => book['overview'] as String).toList());
+        storyauthorname
+            .addAll(allBooks.map((book) => book['author'] as String).toList());
+        publishedBooksCount += allBooks.length;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    String bookType = isUser
+        ? "User Books"
+        : "Author Books"; // التغيير بين "User Books" و "Author Books"
+
     return Scaffold(
+      backgroundColor: Colorclass.white,
       appBar: AppBar(
         title: Text(
           username,
@@ -133,8 +196,8 @@ class _ReadingprofileState extends State<Readingprofile> {
                       publishedBooksCount.toString(),
                       style: TextStyles.Bold18,
                     ),
-                    const Text(
-                      Textclass.Book,
+                    Text(
+                      bookType, // عرض النص المناسب
                       style: TextStyles.normal16,
                     ),
                   ],
@@ -156,8 +219,8 @@ class _ReadingprofileState extends State<Readingprofile> {
             const SizedBox(height: 15),
             Transform.translate(
               offset: const Offset(-120, 0),
-              child: const Text(
-                Textclass.AuthorBooks,
+              child: Text(
+                bookType, // تغيير النص بين "author books" و "user books"
                 style: TextStyles.Bold18,
                 textAlign: TextAlign.left,
               ),
@@ -178,9 +241,7 @@ class _ReadingprofileState extends State<Readingprofile> {
                             imageUrl: storyImages[index],
                             overview: storyOverView[index],
                             author: storyauthorname[index],
-                            bio: index < storybio.length
-                                ? storybio[index]
-                                : "Bio not available",
+                            bio: isUser ? 'User Bio' : 'Author Bio',
                           );
                         },
                       ));

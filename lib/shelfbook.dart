@@ -1,7 +1,7 @@
-import 'package:bookbloom/readbookScreen.dart';
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
+import 'package:bookbloom/readbookScreen.dart';
 import 'package:bookbloom/BaseClasses/ColorClass.dart';
 import 'package:bookbloom/BaseClasses/TextStyleClass.dart';
 
@@ -14,28 +14,11 @@ class ShelfBook extends StatefulWidget {
 
 class _ShelfBookState extends State<ShelfBook> {
   final List<String> shelves = [];
-  String displayName = '';
-  String username = '';
-  
+
   @override
   void initState() {
     super.initState();
     _fetchShelves();
-    _fetchUserData();
-  }
-
-  void _fetchUserData() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      DocumentSnapshot userData = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
-      setState(() {
-        displayName = userData['displayName'];
-        username = userData['username'];
-      });
-    }
   }
 
   void _fetchShelves() async {
@@ -74,6 +57,52 @@ class _ShelfBookState extends State<ShelfBook> {
       setState(() {
         shelves.add(shelfName);
       });
+    }
+  }
+
+  void _deleteShelf(String shelfName) async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+
+    if (userId != null) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('shelves')
+          .doc(shelfName)
+          .delete();
+
+      setState(() {
+        shelves.remove(shelfName);
+      });
+    }
+  }
+
+  void _editShelfName(String oldName, String newName) async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+
+    if (userId != null && newName.isNotEmpty) {
+      final shelfRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('shelves')
+          .doc(oldName);
+
+      final shelfData = await shelfRef.get();
+      if (shelfData.exists) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .collection('shelves')
+            .doc(newName)
+            .set(shelfData.data()!);
+
+        await shelfRef.delete();
+
+        setState(() {
+          shelves.remove(oldName);
+          shelves.add(newName);
+        });
+      }
     }
   }
 
@@ -128,7 +157,42 @@ class _ShelfBookState extends State<ShelfBook> {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSectionTitle(shelves[index]),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildSectionTitle(shelves[index]),
+                      PopupMenuButton<String>(
+                      
+                        color: Colors
+                            .white, // تعيين خلفية القائمة إلى اللون الأبيض
+                        onSelected: (value) {
+                          if (value == 'Edit') {
+                            _showEditShelfDialog(context, shelves[index]);
+                          } else if (value == 'Delete') {
+                            _deleteShelf(shelves[index]);
+                          }
+                        },
+                        itemBuilder: (context) => [
+                          PopupMenuItem(
+                            value: 'Edit',
+                            child: Text(
+                              'Edit',
+                              style: TextStyle(
+                                  color: Colorclass.brown), // لون النص
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: 'Delete',
+                            child: Text(
+                              'Delete',
+                              style: TextStyle(
+                                  color: Colorclass.brown), // لون النص
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 20),
                   books.isEmpty
                       ? _buildEmptyBookPlaceholder()
@@ -159,7 +223,8 @@ class _ShelfBookState extends State<ShelfBook> {
                                       const EdgeInsets.symmetric(horizontal: 8),
                                   decoration: BoxDecoration(
                                     image: DecorationImage(
-                                      image: NetworkImage(book['imageUrl'] ?? ''),
+                                      image:
+                                          NetworkImage(book['imageUrl'] ?? ''),
                                       fit: BoxFit.cover,
                                     ),
                                     borderRadius: BorderRadius.circular(10),
@@ -203,10 +268,10 @@ class _ShelfBookState extends State<ShelfBook> {
   }
 
   void _showAddShelfDialog(BuildContext context) {
+    TextEditingController shelfNameController = TextEditingController();
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        TextEditingController shelfNameController = TextEditingController();
         return AlertDialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
@@ -257,6 +322,107 @@ class _ShelfBookState extends State<ShelfBook> {
                   child: Center(
                     child: Text(
                       "Create Shelf",
+                      style:
+                          TextStyles.Bold16.copyWith(color: Colorclass.white),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+void _addBookToShelf(String shelfName, Map<String, dynamic> book) async {
+  final userId = FirebaseAuth.instance.currentUser?.uid;
+
+  if (userId != null) {
+    final shelfRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('shelves')
+        .doc(shelfName);
+
+    // تحديث الكتب في الشيلف
+    await shelfRef.update({
+      'books': FieldValue.arrayUnion([book]),
+    }).catchError((error) async {
+      // إذا لم يكن الشيلف موجودًا، يتم إنشاؤه
+      await shelfRef.set({
+        'shelfName': shelfName,
+        'books': [book],
+      });
+    });
+
+    setState(() {
+      // تحديث الحالة محليًا
+      final index = shelves.indexOf(shelfName);
+      if (index != -1) {
+        shelves[index] = shelfName; // تحديث قائمة الشيلف
+      }
+    });
+  }
+}
+
+  void _showEditShelfDialog(BuildContext context, String oldName) {
+    TextEditingController shelfNameController =
+        TextEditingController(text: oldName);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colorclass.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Align(
+                alignment: Alignment.topLeft,
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Icon(Icons.close, color: Colorclass.shelf),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: shelfNameController,
+                textAlign: TextAlign.center,
+                decoration: InputDecoration(
+                  hintText: "New shelf name",
+                  hintStyle:
+                      TextStyles.normal18.copyWith(color: Colorclass.shelf),
+                  enabledBorder: const UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colorclass.grey),
+                  ),
+                  focusedBorder: const UnderlineInputBorder(
+                    borderSide: BorderSide(color: Colorclass.brown),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              GestureDetector(
+                onTap: () {
+                  if (shelfNameController.text.isNotEmpty) {
+                    _editShelfName(oldName, shelfNameController.text);
+                  }
+                  Navigator.of(context).pop();
+                },
+                child: Container(
+                  height: 50,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(25),
+                    gradient: Colorclass.gradient,
+                  ),
+                  child: Center(
+                    child: Text(
+                      "Save",
                       style:
                           TextStyles.Bold16.copyWith(color: Colorclass.white),
                     ),

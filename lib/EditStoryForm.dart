@@ -15,6 +15,7 @@ class EditStoryForm extends StatefulWidget {
   final Function(BuildContext) showSelectLanguage;
   final ValueChanged<bool> onMatureChanged;
   final ValueChanged<bool> onCompletedChanged;
+
 // مفتاح النموذج
 
   final String selectedLanguage;
@@ -50,6 +51,7 @@ class _EditStoryFormState extends State<EditStoryForm> {
   late String selectedLanguage;
   late bool isMature;
   late bool isCompleted;
+
   @override
   void initState() {
     super.initState();
@@ -92,12 +94,7 @@ class _EditStoryFormState extends State<EditStoryForm> {
         _imageUrl = downloadUrl;
         _isImageSelected = true;
       });
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('تم رفع الصورة بنجاح')));
-    } catch (e) {
-      print('حدث خطأ أثناء رفع الصورة: $e');
-    }
+    } catch (e) {}
   }
 
   Future<void> _getUserName() async {
@@ -113,6 +110,52 @@ class _EditStoryFormState extends State<EditStoryForm> {
         });
       }
     }
+  }
+
+  void _showValidationErrorDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colorclass.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Please fill out all required fields',
+              style: TextStyles.normal18.copyWith(
+                color: Colorclass.brown, // لون النص
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            Container(
+              height: 40,
+              width: 120,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Colorclass.brown, Colorclass.dustyPink],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: MaterialButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
+                  'OK',
+                  style: TextStyles.normal16.copyWith(
+                    color: Colorclass.white, // لون النص
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -154,67 +197,62 @@ class _EditStoryFormState extends State<EditStoryForm> {
                       style: TextStyles.Bold18,
                     ),
                     TextButton(
-                      onPressed: _isFormValid
-                          ? () async {
-                              String title = _titleController.text;
-                              String description = _descriptionController.text;
-                              String tags = _tagsController.text;
+                      onPressed: () async {
+                        if (_titleController.text.isEmpty ||
+                            _descriptionController.text.isEmpty) {
+                          _showValidationErrorDialog(context);
+                          return;
+                        }
 
-                              if (!_isImageSelected || _userName == null)
-                                return;
+                        if (_isFormValid) {
+                          String title = _titleController.text;
+                          String description = _descriptionController.text;
+                          String tags = _tagsController.text;
 
-                              // إضافة القيمة المدخلة في حقل الفئة المخصصة إذا كانت موجودة
-                              List<String> finalCategories =
-                                  List.from(widget.selectedCategories);
-                              if (customCategory != null &&
-                                  customCategory!.isNotEmpty) {
-                                finalCategories.add(customCategory!);
-                              }
+                          if (!_isImageSelected || _userName == null) return;
 
-                              FirebaseFirestore firestore =
-                                  FirebaseFirestore.instance;
+                          List<String> finalCategories =
+                              List.from(widget.selectedCategories);
+                          if (customCategory != null &&
+                              customCategory!.isNotEmpty) {
+                            finalCategories.add(customCategory!);
+                          }
 
-                              // إضافة القصة إلى قاعدة البيانات وجلب الوثيقة المرجعية
-                              DocumentReference docRef =
-                                  await firestore.collection('stories').add({
-                                'imageUrl': _imageUrl,
-                                'title': title,
-                                'description': description,
-                                'tags': tags,
-                                'selectedLanguage': widget.selectedLanguage,
-                                'isMature': widget.isMature,
-                                'isCompleted': widget.isCompleted,
-                                'selectedCategories':
-                                    finalCategories, // إضافة الفئات النهائية
-                                'author': _userName,
-                                'authorId': FirebaseAuth.instance.currentUser
-                                    ?.uid, // إضافة authorId
-                                'createdAt': FieldValue.serverTimestamp(),
-                              });
+                          FirebaseFirestore firestore =
+                              FirebaseFirestore.instance;
+                          DocumentReference docRef =
+                              await firestore.collection('stories').add({
+                            'imageUrl': _imageUrl,
+                            'title': title,
+                            'description': description,
+                            'tags': tags,
+                            'selectedLanguage': widget.selectedLanguage,
+                            'isMature': widget.isMature,
+                            'isCompleted': widget.isCompleted,
+                            'selectedCategories': finalCategories,
+                            'author': _userName,
+                            'authorId': FirebaseAuth.instance.currentUser?.uid,
+                            'createdAt': FieldValue.serverTimestamp(),
+                          });
 
-                              // جلب story id
-                              String storyId = docRef.id;
+                          String storyId = docRef.id;
 
-                              // تحديث الوثيقة لإضافة story id
-                              await firestore
-                                  .collection('stories')
-                                  .doc(storyId)
-                                  .update({
-                                'storyId':
-                                    storyId, // إضافة story id إلى الوثيقة
-                              });
+                          await firestore
+                              .collection('stories')
+                              .doc(storyId)
+                              .update({
+                            'storyId': storyId,
+                          });
 
-                          
-
-                              Navigator.push(context, MaterialPageRoute(
-                                builder: (context) {
-                                  return WriteStoryScreen(
-                                    storyId: storyId,
-                                  );
-                                },
-                              ));
-                            }
-                          : null,
+                          Navigator.push(context, MaterialPageRoute(
+                            builder: (context) {
+                              return WriteStoryScreen(
+                                storyId: storyId,
+                              );
+                            },
+                          ));
+                        }
+                      },
                       child: Text(
                         Textclass.Save,
                         style: TextStyles.Bold18.copyWith(
@@ -440,60 +478,50 @@ class _EditStoryFormState extends State<EditStoryForm> {
     );
   }
 
-Widget _buildTextFieldWithValidation(
-    String labelText, TextEditingController controller) {
-  return Padding(
-    padding: const EdgeInsets.only(bottom: 10),
-    child: Stack(
-      children: [
-        Row(
-          children: [
-            Text(
-              labelText,
-              style: TextStyles.normal16,
-            ),
-            const Text(
-              ' *',
-              style: TextStyle(color: Colors.red, fontSize: 18),
-            ),
-          ],
-        ),
-        Expanded(
-          child: SizedBox(
-            height: 40,
-            child: TextField(
-              controller: controller, // إضافة الـ controller هنا
-              decoration: InputDecoration(
-                border: UnderlineInputBorder(
-                  borderSide: BorderSide(
-                      color: controller.text.isEmpty
-                          ? Colors.red
-                          : Colorclass.brown),
-                ),
-                focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(
-                      color: controller.text.isEmpty
-                          ? Colors.red
-                          : Colorclass.brown),
-                ),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(
-                      color: controller.text.isEmpty
-                          ? Colors.red
-                          : Colorclass.brown),
-                ),
-                contentPadding:
-                    const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+  Widget _buildTextFieldWithValidation(
+      String labelText, TextEditingController controller) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Stack(
+        children: [
+          Row(
+            children: [
+              Text(
+                labelText,
+                style: TextStyles.normal16,
               ),
-              onChanged: (value) {
-                setState(() {}); // لتحديث اللون عند التغيير
-              },
+              const Text(
+                ' *',
+                style: TextStyle(color: Colors.red, fontSize: 18),
+              ),
+            ],
+          ),
+          Expanded(
+            child: SizedBox(
+              height: 40,
+              child: TextField(
+                controller: controller, // إضافة الـ controller هنا
+                decoration: const InputDecoration(
+                  border: UnderlineInputBorder(
+                    borderSide:
+                        BorderSide(color: Colorclass.brown), // اللون البني
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide:
+                        BorderSide(color: Colorclass.brown), // اللون البني
+                  ),
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide:
+                        BorderSide(color: Colorclass.brown), // اللون البني
+                  ),
+                  contentPadding:
+                      EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                ),
+              ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
-
+        ],
+      ),
+    );
   }
+}

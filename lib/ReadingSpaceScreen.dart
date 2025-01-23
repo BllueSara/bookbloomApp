@@ -1,3 +1,4 @@
+import 'package:bookbloom/WriteStoryScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:bookbloom/BaseClasses/ColorClass.dart';
@@ -51,7 +52,8 @@ class _ReadingspacescreenState extends State<Readingspacescreen> {
           setState(() {
             title = storyDoc['title'] ?? "No Title";
             authorName = storyDoc['author'] ?? "Unknown Author";
-            content = partSnapshot.docs.first['content'] ?? "No Content Available";
+            content =
+                partSnapshot.docs.first['content'] ?? "No Content Available";
           });
         }
       }
@@ -68,7 +70,7 @@ class _ReadingspacescreenState extends State<Readingspacescreen> {
         backgroundColor: Colorclass.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back,
+          icon: const Icon(Icons.keyboard_backspace,
               color: Colorclass.dustyPink, size: 30),
           onPressed: () {
             Navigator.pop(context);
@@ -82,9 +84,7 @@ class _ReadingspacescreenState extends State<Readingspacescreen> {
               style: TextStyles.Bold16.copyWith(color: Colorclass.brown),
             ),
             GestureDetector(
-              onTap: () {
-              
-              },
+              onTap: () {},
               child: Text(
                 authorName,
                 style: TextStyles.hint14.copyWith(color: Colorclass.grey),
@@ -130,8 +130,21 @@ class _ReadingspacescreenState extends State<Readingspacescreen> {
                     IconButton(
                       icon: const Icon(Icons.chat_bubble_outline,
                           color: Colorclass.brown, size: 30),
-                      onPressed: () {
-                        // Handle comment action
+                      onPressed: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => WriteStoryScreen(
+                                storyId: widget.storyId), // شاشة الكتابة
+                          ),
+                        );
+
+                        // تحديث النص في شاشة القراءة
+                        if (result != null) {
+                          setState(() {
+                            content = result; // النص الجديد
+                          });
+                        }
                       },
                     ),
                   ],

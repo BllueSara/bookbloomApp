@@ -17,6 +17,7 @@ class WriteStoryScreen extends StatefulWidget {
 class _WriteStoryScreenState extends State<WriteStoryScreen> {
   final TextEditingController _partContentController = TextEditingController();
   String selectedPart = "Part 1";
+  List<String> parts = ["Part 1"]; // الجزء الافتراضي "Part 1"
 
   Future<void> _loadPartContent() async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -53,19 +54,61 @@ class _WriteStoryScreenState extends State<WriteStoryScreen> {
       'createdAt': FieldValue.serverTimestamp(),
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(isDraft ? 'تم حفظ المسودة بنجاح' : 'تم نشر الجزء بنجاح'),
-    ));
+    _showSuccessDialog(context, isDraft);
 
     if (!isDraft) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const MainPage(index: 1),
-        ),
-        (route) => false,
-      );
+      Navigator.pop(context, partContent); // تمرير النص المُحدث عند العودة
     }
+  }
+
+  void _showSuccessDialog(BuildContext context, bool isDraft) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colorclass.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                isDraft
+                    ? 'Draft saved successfully'
+                    : 'Part published successfully',
+                style: TextStyles.normal18.copyWith(
+                  color: Colorclass.brown,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              Container(
+                height: 40,
+                width: 120,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Colorclass.brown, Colorclass.dustyPink],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: MaterialButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: Text(
+                    'OK',
+                    style: TextStyles.normal16.copyWith(
+                      color: Colorclass.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -84,14 +127,12 @@ class _WriteStoryScreenState extends State<WriteStoryScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // شريط الأدوات العلوي
                 Padding(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 15.0, vertical: 20),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // زر العودة
                       IconButton(
                         icon: const Icon(Icons.keyboard_backspace,
                             color: Colorclass.brown, size: 40),
@@ -99,45 +140,80 @@ class _WriteStoryScreenState extends State<WriteStoryScreen> {
                           Navigator.pop(context);
                         },
                       ),
-                      SizedBox(width: 10,),
-                      // اختيار الجزء
+                      const SizedBox(width: 10),
                       PopupMenuButton<String>(
+                        color: Colorclass.white,
                         onSelected: (String value) {
-                          setState(() {
-                            selectedPart = value;
-                          });
-                          _loadPartContent();
+                          if (value == "add") {
+                            setState(() {
+                              parts.add("Part ${parts.length + 1}");
+                              selectedPart = parts.last;
+                            });
+                          } else {
+                            setState(() {
+                              selectedPart = value;
+                              _loadPartContent();
+                            });
+                          }
                         },
-                        itemBuilder: (BuildContext context) =>
-                            <PopupMenuEntry<String>>[
-                          PopupMenuItem<String>(
-                            value: "Part 1",
-                            child: Text(
-                              "Part 1",
-                              style: TextStyles.normal16.copyWith(
-                                color: Colorclass.brown,
+                        itemBuilder: (BuildContext context) {
+                          return [
+                            ...parts.map(
+                              (part) => PopupMenuItem<String>(
+                                value: part,
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      part,
+                                      style: TextStyles.normal16.copyWith(
+                                        color: Colorclass.brown,
+                                      ),
+                                    ),
+                                    if (part != "Part 1") // منع حذف الجزء الافتراضي
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.remove_circle,
+                                          color: Colorclass.dustyPink,
+                                          size: 20,
+                                        ),
+                                        onPressed: () {
+                                          setState(() {
+                                            parts.remove(part);
+                                            if (selectedPart == part) {
+                                              selectedPart = parts.first;
+                                              _partContentController.clear();
+                                            }
+                                          });
+                                        },
+                                      ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                          PopupMenuItem<String>(
-                            value: "Part 2",
-                            child: Text(
-                              "Part 2",
-                              style: TextStyles.normal16.copyWith(
-                                color: Colorclass.brown,
+                            const PopupMenuDivider(),
+                            PopupMenuItem<String>(
+                              value: "add",
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    "Add Part",
+                                    style: TextStyles.normal16.copyWith(
+                                      color: Colorclass.dustyPink,
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.add,
+                                    color: Colorclass.dustyPink,
+                                  ),
+                                ],
                               ),
                             ),
-                          ),
-                          PopupMenuItem<String>(
-                            value: "Part 3",
-                            child: Text(
-                              "Part 3",
-                              style: TextStyles.normal16.copyWith(
-                                color: Colorclass.brown,
-                              ),
-                            ),
-                          ),
-                        ],
+                          ];
+                        },
                         child: Row(
                           children: [
                             Text(
@@ -151,7 +227,6 @@ class _WriteStoryScreenState extends State<WriteStoryScreen> {
                           ],
                         ),
                       ),
-                      // زر النشر
                       ElevatedButton(
                         onPressed: () {
                           _savePart(_partContentController.text);
@@ -173,34 +248,29 @@ class _WriteStoryScreenState extends State<WriteStoryScreen> {
                   ),
                 ),
                 const SizedBox(height: 20),
-                // اسم البارت مع خط
                 Center(
                   child: Column(
                     children: [
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: TextFormField(
-                          initialValue:
-                              "Part Title", // القيمة الافتراضية لعنوان البارت
-                          textAlign: TextAlign.center, // توسيط النص داخل الحقل
+                          textAlign: TextAlign.center,
                           decoration: InputDecoration(
-                            hintText: "Part Title", // النص التوجيهي
+                            hintText: "Part Title",
                             hintStyle: TextStyles.normal18.copyWith(
-                              color: Colorclass.addicon, // لون النص التوجيهي
+                              color: Colorclass.addicon,
                             ),
-                            border: InputBorder
-                                .none, // إزالة الحدود الافتراضية للحقل
+                            border: InputBorder.none,
                           ),
                           style: TextStyles.normal18.copyWith(
-                            color: Colorclass.addicon, // لون النص
+                            color: Colorclass.addicon,
                           ),
                           onChanged: (value) {
-                            // تحديث عنوان البارت عند تغييره
                             selectedPart = value;
                           },
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Please enter a part title'; // رسالة خطأ عند ترك الحقل فارغًا
+                              return 'Please enter a part title';
                             }
                             return null;
                           },
@@ -215,8 +285,6 @@ class _WriteStoryScreenState extends State<WriteStoryScreen> {
                     ],
                   ),
                 ),
-
-                // حقل الكتابة
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 110),
@@ -224,7 +292,7 @@ class _WriteStoryScreenState extends State<WriteStoryScreen> {
                       controller: _partContentController,
                       maxLines: null,
                       decoration: InputDecoration(
-                        hintText: Textclass.start, // النص التوجيهي
+                        hintText: Textclass.start,
                         hintStyle: TextStyles.normal16.copyWith(
                           color: Colorclass.addicon,
                         ),
@@ -235,7 +303,6 @@ class _WriteStoryScreenState extends State<WriteStoryScreen> {
                 ),
               ],
             ),
-            // زر الحفظ كمسودة
             Align(
               alignment: Alignment.bottomLeft,
               child: Padding(

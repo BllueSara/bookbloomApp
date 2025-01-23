@@ -1,4 +1,5 @@
 import 'package:bookbloom/readbookScreen.dart';
+import 'package:bookbloom/readingprofile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:bookbloom/BaseClasses/colorclass.dart';
@@ -21,21 +22,42 @@ class _SearchScreenState extends State<SearchScreen> {
   Stream<List<Map<String, dynamic>>> _getBooks() async* {
     String searchQuery = searchController.text.trim();
     if (searchQuery.isEmpty) {
-      // إرجاع قائمة فارغة إذا لم يتم إدخال نص بحث
       yield [];
       return;
     }
 
     List<Map<String, dynamic>> results = [];
 
-    // البحث بالاسم فقط
+    // البحث بالاسم فقط (Author)
     if (selectedFilter == Textclass.Author) {
+      // أولاً نبحث إذا كان المؤلف موجودًا في stories
       var authorQuery = await FirebaseFirestore.instance
           .collection('stories')
           .where('author', isGreaterThanOrEqualTo: searchQuery)
           .where('author', isLessThanOrEqualTo: '$searchQuery\uf8ff')
           .get();
-      results.addAll(authorQuery.docs.map((doc) => doc.data()));
+
+      if (authorQuery.docs.isNotEmpty) {
+        results.addAll(authorQuery.docs.map((doc) => doc.data()));
+      } else {
+        // إذا لم يكن المؤلف موجودًا في stories، نبحث في users
+        var userQuery = await FirebaseFirestore.instance
+            .collection('users')
+            .where('username', isGreaterThanOrEqualTo: searchQuery)
+            .where('username', isLessThanOrEqualTo: '$searchQuery\uf8ff')
+            .get();
+
+        if (userQuery.docs.isNotEmpty) {
+          // إضافة بيانات المستخدم من users
+          results.addAll(userQuery.docs.map((doc) {
+            var userData = doc.data();
+            return {
+              'username': userData['username'] ?? 'No Username',
+              'displayName': userData['displayName'] ?? 'No Display Name',
+            };
+          }));
+        }
+      }
     }
 
     // البحث بالعنوان فقط
@@ -64,7 +86,7 @@ class _SearchScreenState extends State<SearchScreen> {
       results.addAll(authorQuery.docs.map((doc) => doc.data()));
       results.addAll(titleQuery.docs.map((doc) => doc.data()));
 
-      // إزالة التكرارات إذا كان نفس الكتاب موجوداً في النتائج
+      // إزالة التكرارات
       results = results.toSet().toList();
     }
 
@@ -163,13 +185,27 @@ class _SearchScreenState extends State<SearchScreen> {
                     itemCount: books.length,
                     itemBuilder: (context, index) {
                       var book = books[index];
+
+                      // التحقق إذا كانت البيانات تخص المؤلف أو المستخدم
+                      bool isUser = book.containsKey('username');
+
                       return _bookItem(
-                        book['imageUrl'] ?? 'assets/images/default_image.png',
-                        book['title'] ?? 'No Title',
-                        book['author'] ?? 'No Author',
-                        book['overview'] ?? 'No Overview',
-                        book['bio'] ?? 'No Bio',
-                      );
+                          isUser
+                              ? book['imageUrl'] ??
+                                  'assets/images/default_image.png'
+                              : book['imageUrl'] ??
+                                  'assets/images/default_image.png',
+                          isUser
+                              ? book['displayName'] ?? 'No Display Name'
+                              : book['title'] ?? 'No Title',
+                          isUser
+                              ? book['username'] ?? 'No Username'
+                              : book['author'] ?? 'No Author',
+                          isUser
+                              ? 'User Bio'
+                              : book['overview'] ?? 'No Overview',
+                          isUser ? 'User Bio' : book['bio'] ?? 'No Bio',
+                          book);
                     },
                   );
                 },
@@ -207,26 +243,46 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   // عنصر الكتاب
+  // عنصر الكتاب
+  // عنصر الكتاب
   Widget _bookItem(String imagePath, String title, String author,
-      String overview, String bio) {
+      String overview, String bio, Map<String, dynamic> book) {
+    // التحقق إذا كانت البيانات تخص مستخدم
+    bool isUser = book.containsKey(
+        'username'); // إذا كان الكتاب يحتوي على 'username' فهو مستخدم
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0), // مسافة بين العناصر
+      padding: const EdgeInsets.only(bottom: 16.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // التأكد من عرض الصورة بشكل صحيح
+          // إذا كانت بيانات المؤلف أو المستخدم
           GestureDetector(
             onTap: () {
-              Navigator.push(
+              if (isUser) {
+                // إذا كانت هذه بيانات مستخدم وليس مؤلف
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => Readingprofile(
+                      authorId: book['username'], // انتقل إلى صفحة المستخدم
+                    ),
+                  ),
+                );
+              } else {
+                Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => ReadBookScreen(
-                        title: title,
-                        imageUrl: imagePath,
-                        overview: overview,
-                        author: author,
-                        bio: bio),
-                  ));
+                      title: title,
+                      imageUrl: imagePath,
+                      overview: overview,
+                      author: author,
+                      bio: bio,
+                    ),
+                  ),
+                );
+              }
             },
             child: Container(
               width: 80,
@@ -234,7 +290,7 @@ class _SearchScreenState extends State<SearchScreen> {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
                 image: DecorationImage(
-                  image: NetworkImage(imagePath), // عرض الصورة من المسار المحدد
+                  image: NetworkImage(imagePath),
                   fit: BoxFit.cover,
                 ),
               ),
@@ -252,7 +308,9 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
               const SizedBox(height: 4),
               Text(
-                author,
+                isUser
+                    ? book['username']
+                    : author, // يعرض 'User' في حالة كانت البيانات تخص المستخدم
                 style:
                     TextStyles.normal16.copyWith(color: Colorclass.lightgray),
                 maxLines: 1,
