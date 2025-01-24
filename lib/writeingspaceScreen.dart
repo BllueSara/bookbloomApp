@@ -108,7 +108,7 @@ class _WriteingspacescreenState extends State<Writeingspacescreen> {
         if (data != null &&
             data.containsKey('readerCount') &&
             data['readerCount'] != null) {
-          totalReaderCount += (data['readerCount'] as num).toInt();
+          totalReaderCount = (data['readerCount'] as num).toInt();
         }
       }
 
