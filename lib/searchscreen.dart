@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:bookbloom/readbookScreen.dart';
 import 'package:bookbloom/readingprofile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -5,6 +7,9 @@ import 'package:flutter/material.dart';
 import 'package:bookbloom/BaseClasses/colorclass.dart';
 import 'package:bookbloom/BaseClasses/textclass.dart';
 import 'package:bookbloom/BaseClasses/TextStyleClass.dart';
+import 'package:lottie/lottie.dart';
+
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -30,7 +35,6 @@ class _SearchScreenState extends State<SearchScreen> {
 
     // البحث بالاسم فقط (Author)
     if (selectedFilter == Textclass.Author) {
-      // أولاً نبحث إذا كان المؤلف موجودًا في stories
       var authorQuery = await FirebaseFirestore.instance
           .collection('stories')
           .where('author', isGreaterThanOrEqualTo: searchQuery)
@@ -38,9 +42,27 @@ class _SearchScreenState extends State<SearchScreen> {
           .get();
 
       if (authorQuery.docs.isNotEmpty) {
-        results.addAll(authorQuery.docs.map((doc) => doc.data()));
+        // Use for loop instead of map for async operations
+        for (var doc in authorQuery.docs) {
+          var data = doc.data();
+          data['storyId'] = doc.id; // إضافة storyId
+
+          // جلب الـ bio من مجموعة users باستخدام username
+          var userQuery = await FirebaseFirestore.instance
+              .collection('users')
+              .where('username', isEqualTo: data['author'])
+              .get();
+
+          if (userQuery.docs.isNotEmpty) {
+            var userData = userQuery.docs.first.data();
+            data['bio'] = userData['bio'] ?? 'No Bio'; // إضافة bio من users
+          } else {
+            data['bio'] = 'No Bio'; // في حال لم يتم العثور على المستخدم
+          }
+
+          results.add(data);
+        }
       } else {
-        // إذا لم يكن المؤلف موجودًا في stories، نبحث في users
         var userQuery = await FirebaseFirestore.instance
             .collection('users')
             .where('username', isGreaterThanOrEqualTo: searchQuery)
@@ -48,14 +70,14 @@ class _SearchScreenState extends State<SearchScreen> {
             .get();
 
         if (userQuery.docs.isNotEmpty) {
-          // إضافة بيانات المستخدم من users
-          results.addAll(userQuery.docs.map((doc) {
+          // Use for loop instead of map for async operations
+          for (var doc in userQuery.docs) {
             var userData = doc.data();
-            return {
-              'username': userData['username'] ?? 'No Username',
-              'displayName': userData['displayName'] ?? 'No Display Name',
-            };
-          }));
+            userData['userId'] = doc.id; // إضافة userId
+            userData['bio'] =
+                userData.containsKey('bio') ? userData['bio'] : 'No Bio';
+            results.add(userData);
+          }
         }
       }
     }
@@ -67,7 +89,27 @@ class _SearchScreenState extends State<SearchScreen> {
           .where('title', isGreaterThanOrEqualTo: searchQuery)
           .where('title', isLessThanOrEqualTo: '$searchQuery\uf8ff')
           .get();
-      results.addAll(titleQuery.docs.map((doc) => doc.data()));
+
+      // Use for loop instead of map for async operations
+      for (var doc in titleQuery.docs) {
+        var data = doc.data();
+        data['storyId'] = doc.id; // إضافة storyId
+
+        // جلب الـ bio من مجموعة users باستخدام author
+        var userQuery = await FirebaseFirestore.instance
+            .collection('users')
+            .where('username', isEqualTo: data['author'])
+            .get();
+
+        if (userQuery.docs.isNotEmpty) {
+          var userData = userQuery.docs.first.data();
+          data['bio'] = userData['bio'] ?? 'No Bio'; // إضافة bio من users
+        } else {
+          data['bio'] = 'No Bio'; // في حال لم يتم العثور على المستخدم
+        }
+
+        results.add(data);
+      }
     }
 
     // البحث بالاسم أو العنوان
@@ -83,14 +125,69 @@ class _SearchScreenState extends State<SearchScreen> {
           .where('title', isLessThanOrEqualTo: '$searchQuery\uf8ff')
           .get();
 
-      results.addAll(authorQuery.docs.map((doc) => doc.data()));
-      results.addAll(titleQuery.docs.map((doc) => doc.data()));
+      // Use for loop instead of map for async operations
+      for (var doc in authorQuery.docs) {
+        var data = doc.data();
+        data['storyId'] = doc.id; // إضافة storyId
 
-      // إزالة التكرارات
+        // جلب الـ bio من مجموعة users باستخدام author
+        var userQuery = await FirebaseFirestore.instance
+            .collection('users')
+            .where('username', isEqualTo: data['author'])
+            .get();
+
+        if (userQuery.docs.isNotEmpty) {
+          var userData = userQuery.docs.first.data();
+          data['bio'] = userData['bio'] ?? 'No Bio'; // إضافة bio من users
+        } else {
+          data['bio'] = 'No Bio'; // في حال لم يتم العثور على المستخدم
+        }
+
+        results.add(data);
+      }
+
+      // Use for loop instead of map for async operations
+      for (var doc in titleQuery.docs) {
+        var data = doc.data();
+        data['storyId'] = doc.id; // إضافة storyId
+
+        // جلب الـ bio من مجموعة users باستخدام author
+        var userQuery = await FirebaseFirestore.instance
+            .collection('users')
+            .where('username', isEqualTo: data['author'])
+            .get();
+
+        if (userQuery.docs.isNotEmpty) {
+          var userData = userQuery.docs.first.data();
+          data['bio'] = userData['bio'] ?? 'No Bio'; // إضافة bio من users
+        } else {
+          data['bio'] = 'No Bio'; // في حال لم يتم العثور على المستخدم
+        }
+
+        results.add(data);
+      }
+
+      // إزالة التكرار بين القصص حسب المؤلف والعنوان
       results = results.toSet().toList();
     }
 
     yield results;
+  }
+
+  String? profilePicture; // لتخزين مسار الصورة
+
+  Future<void> _loadProfilePicture() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      profilePicture =
+          prefs.getString('profilePicture') ?? 'images/avatar1.png';
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfilePicture();
   }
 
   @override
@@ -177,7 +274,15 @@ class _SearchScreenState extends State<SearchScreen> {
                   }
                   if (!snapshot.hasData || snapshot.data!.isEmpty) {
                     // إذا كانت نتائج البحث فارغة، يتم إظهار هذه الرسالة فقط
-                    return const SizedBox.shrink();
+                    if (searchController.text.isNotEmpty) {
+                      // إذا كان هناك بحث ولكن لا توجد نتائج
+                      return Center(
+                        child: LottieBuilder.asset('images/empty_serach.json'),
+                      );
+                    } else {
+                      // إذا لم يتم البحث بعد
+                      return const SizedBox.shrink();
+                    }
                   }
 
                   var books = snapshot.data!;
@@ -203,7 +308,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               : book['author'] ?? 'No Author',
                           isUser
                               ? 'User Bio'
-                              : book['overview'] ?? 'No Overview',
+                              : book['description'] ?? 'No Overview',
                           isUser ? 'User Bio' : book['bio'] ?? 'No Bio',
                           book);
                     },
@@ -250,13 +355,13 @@ class _SearchScreenState extends State<SearchScreen> {
     // التحقق إذا كانت البيانات تخص مستخدم
     bool isUser = book.containsKey(
         'username'); // إذا كان الكتاب يحتوي على 'username' فهو مستخدم
+    String docId = isUser ? book['userId'] : book['storyId']; // الحصول على ID
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // إذا كانت بيانات المؤلف أو المستخدم
           GestureDetector(
             onTap: () {
               if (isUser) {
@@ -279,22 +384,34 @@ class _SearchScreenState extends State<SearchScreen> {
                       overview: overview,
                       author: author,
                       bio: bio,
+                      storyId: docId, // انتقل إلى صفحة الكتاب
                     ),
                   ),
                 );
               }
             },
-            child: Container(
-              width: 80,
-              height: 100,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                image: DecorationImage(
-                  image: NetworkImage(imagePath),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
+            child: isUser
+                ? CircleAvatar(
+                    backgroundImage:
+                        profilePicture != null && profilePicture!.isNotEmpty
+                            ? (profilePicture!.startsWith('images/')
+                                ? AssetImage(profilePicture!)
+                                : FileImage(File(profilePicture!)))
+                            : const AssetImage('images/avatar1.png')
+                                as ImageProvider,
+                    radius: 20,
+                  )
+                : Container(
+                    width: 80,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      image: DecorationImage(
+                        image: NetworkImage(imagePath),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
           ),
           const SizedBox(width: 16),
           Column(

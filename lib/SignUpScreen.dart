@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:bookbloom/LoginScreen.dart';
 import 'package:bookbloom/mainpage.dart';
+import 'package:bookbloom/profile.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -22,27 +23,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
   String username = '';
   String email = '';
   String password = '';
-  String bio = '';
   bool obscurePassword = true;
 
-  StreamSubscription<User?>? authSubscription; // متغير لتخزين الاشتراك
+  StreamSubscription<User?>? authSubscription;
 
   @override
   void initState() {
     super.initState();
 
-    // حفظ الاشتراك في authStateChanges
     authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
       if (mounted && user != null) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const MainPage(index: 0,)),
+          MaterialPageRoute(builder: (context) => const MainPage(index: 0)),
         );
       }
     });
   }
 
-  // Controllers for form fields
   TextEditingController displayNameController = TextEditingController();
   TextEditingController usernameController = TextEditingController();
   TextEditingController emailController = TextEditingController();
@@ -59,7 +57,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   Future<void> signUp() async {
-    if (!mounted) return; // Make sure the widget is still mounted
+    if (!mounted) return;
     if (displayName.isEmpty) {
       _showErrorDialog('Please enter a display name.');
       return;
@@ -84,27 +82,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
         password: password,
       );
 
-      // Update display name for the user
       await credential.user?.updateDisplayName(displayName);
 
-      // Save user data to Firestore
-      FirebaseFirestore.instance
+      // حفظ بيانات المستخدم في Firestore مع bio كقيمة فارغة
+      await FirebaseFirestore.instance
           .collection('users')
           .doc(credential.user?.uid)
           .set({
         'displayName': displayName,
         'username': username,
         'email': email,
-        'bio': bio,
+        'bio': '', // bio يتم تركه فارغًا ليُضاف لاحقًا
         'createdAt': FieldValue.serverTimestamp(),
       });
 
+      // عرض نافذة تحث المستخدم على إضافة bio
       if (mounted) {
-        // Navigate to MainPage after successful sign up
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const MainPage(index: 0,)),
-        );
+        _showBioRequiredDialog();
       }
     } on FirebaseAuthException catch (e) {
       String errorMessage = '';
@@ -119,8 +113,63 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
-  // دالة لعرض AlertDialog مخصص
+  void _showBioRequiredDialog() {
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colorclass.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Registration complete! Please add a bio from your profile.',
+              style: TextStyles.normal18.copyWith(
+                color: Colorclass.brown,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+            Container(
+              height: 40,
+              width: 150,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Colorclass.brown, Colorclass.dustyPink],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: MaterialButton(
+                onPressed: () {
+                  // الانتقال إلى صفحة الملف الشخصي
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const Profile(),
+                    ),
+                  );
+                },
+                child: Text(
+                  'Go to Profile',
+                  style: TextStyles.normal16.copyWith(
+                    color: Colorclass.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _showErrorDialog(String message) {
+    if (!mounted) return;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

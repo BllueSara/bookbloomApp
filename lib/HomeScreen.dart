@@ -205,71 +205,103 @@ class _HomePageState extends State<HomePage> {
                         itemCount: stories.length,
                         itemBuilder: (context, index) {
                           final story = stories[index];
-                          return GestureDetector(
-                            onTap: () async {
-                              final authorUsername =
-                                  story['author']; // الـ username للمؤلف
+                          return Stack(
+                            children: [
+                              GestureDetector(
+                                onTap: () async {
+                                  final authorUsername =
+                                      story['author']; // الـ username للمؤلف
+                                  final storyId = story
+                                      .id; // الحصول على الـ storyId (doc.id)
 
-                              // استرجاع الـ bio باستخدام الـ username
-                              QuerySnapshot authorQuery =
-                                  await FirebaseFirestore.instance
-                                      .collection('users')
-                                      .where('username',
-                                          isEqualTo: authorUsername)
-                                      .limit(1)
-                                      .get();
+                                  // استرجاع الـ bio باستخدام الـ username
+                                  QuerySnapshot authorQuery =
+                                      await FirebaseFirestore.instance
+                                          .collection('users')
+                                          .where('username',
+                                              isEqualTo: authorUsername)
+                                          .limit(1)
+                                          .get();
 
-                              if (authorQuery.docs.isNotEmpty) {
-                                // نحصل على الـ bio من أول مستند في النتيجة
-                                String bio = authorQuery.docs.first['bio'] ??
-                                    'Bio not available';
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ReadBookScreen(
-                                      title: story['title'] ??
-                                          'No Title Available',
-                                      imageUrl: story['imageUrl'] ??
-                                          'default_image_url',
-                                      overview: story['description'] ??
-                                          'No description available',
-                                      author:
-                                          story['author'] ?? 'Unknown Author',
-                                      bio: bio,
+                                  if (authorQuery.docs.isNotEmpty) {
+                                    // نحصل على الـ bio من أول مستند في النتيجة
+                                    String bio =
+                                        authorQuery.docs.first['bio'] ??
+                                            'Bio not available';
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => ReadBookScreen(
+                                          title: story['title'] ??
+                                              'No Title Available',
+                                          imageUrl: story['imageUrl'] ??
+                                              'default_image_url',
+                                          overview: story['description'] ??
+                                              'No description available',
+                                          author: story['author'] ??
+                                              'Unknown Author',
+                                          bio: bio,
+                                          storyId: storyId,
+                                        ),
+                                      ),
+                                    );
+                                  } else {
+                                    // في حالة عدم وجود الـ username في users
+                                    String bio = 'Bio not available';
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => ReadBookScreen(
+                                          title: story['title'] ??
+                                              'No Title Available',
+                                          imageUrl: story['imageUrl'] ??
+                                              'default_image_url',
+                                          overview: story['description'] ??
+                                              'No description available',
+                                          author: story['author'] ??
+                                              'Unknown Author',
+                                          bio: bio,
+                                          storyId: storyId,
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                },
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    image: DecorationImage(
+                                      image: NetworkImage(story['imageUrl']),
+                                      fit: BoxFit.cover,
                                     ),
                                   ),
-                                );
-                              } else {
-                                // في حالة عدم وجود الـ username في users
-                                String bio = 'Bio not available';
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => ReadBookScreen(
-                                      title: story['title'] ??
-                                          'No Title Available',
-                                      imageUrl: story['imageUrl'] ??
-                                          'default_image_url',
-                                      overview: story['description'] ??
-                                          'No description available',
-                                      author:
-                                          story['author'] ?? 'Unknown Author',
-                                      bio: bio,
-                                    ),
-                                  ),
-                                );
-                              }
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                                image: DecorationImage(
-                                  image: NetworkImage(story['imageUrl']),
-                                  fit: BoxFit.cover,
                                 ),
                               ),
-                            ),
+                              Align(
+                                alignment: Alignment.bottomCenter,
+                                child: Container(
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(8.0),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black
+                                        .withOpacity(0.3), // خلفية نص نصف شفافة
+                                    borderRadius: const BorderRadius.only(
+                                      bottomLeft: Radius.circular(16),
+                                      bottomRight: Radius.circular(16),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    story['title'] ?? 'No Title Available',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyles.hint14.copyWith(
+                                      color: Colors
+                                          .white, // لون النص أبيض ليظهر على الخلفية
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                           );
                         },
                       );

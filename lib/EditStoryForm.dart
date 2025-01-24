@@ -16,8 +16,6 @@ class EditStoryForm extends StatefulWidget {
   final ValueChanged<bool> onMatureChanged;
   final ValueChanged<bool> onCompletedChanged;
 
-// مفتاح النموذج
-
   final String selectedLanguage;
   final bool isMature;
   final bool isCompleted;
@@ -56,10 +54,18 @@ class _EditStoryFormState extends State<EditStoryForm> {
   void initState() {
     super.initState();
     _getUserName();
-
+    _titleController.text = '';
+    _descriptionController.text = '';
+    _tagsController.text = '';
     selectedLanguage = widget.selectedLanguage;
     isMature = widget.isMature;
     isCompleted = widget.isCompleted;
+  }
+
+  @override
+  void dispose() {
+    // عند مغادرة الصفحة، لا تحفظ القيم إذا لم يتم حفظها
+    super.dispose();
   }
 
   String? _imageUrl; // لتخزين رابط الصورة
@@ -94,7 +100,12 @@ class _EditStoryFormState extends State<EditStoryForm> {
         _imageUrl = downloadUrl;
         _isImageSelected = true;
       });
-    } catch (e) {}
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('تم رفع الصورة بنجاح')));
+    } catch (e) {
+      print('حدث خطأ أثناء رفع الصورة: $e');
+    }
   }
 
   Future<void> _getUserName() async {
@@ -110,52 +121,6 @@ class _EditStoryFormState extends State<EditStoryForm> {
         });
       }
     }
-  }
-
-  void _showValidationErrorDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colorclass.white,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Please fill out all required fields',
-              style: TextStyles.normal18.copyWith(
-                color: Colorclass.brown, // لون النص
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            Container(
-              height: 40,
-              width: 120,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Colorclass.brown, Colorclass.dustyPink],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: MaterialButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(
-                  'OK',
-                  style: TextStyles.normal16.copyWith(
-                    color: Colorclass.white, // لون النص
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
@@ -197,62 +162,67 @@ class _EditStoryFormState extends State<EditStoryForm> {
                       style: TextStyles.Bold18,
                     ),
                     TextButton(
-                      onPressed: () async {
-                        if (_titleController.text.isEmpty ||
-                            _descriptionController.text.isEmpty) {
-                          _showValidationErrorDialog(context);
-                          return;
-                        }
+                      onPressed: _isFormValid
+                          ? () async {
+                              String title = _titleController.text;
+                              String description = _descriptionController.text;
+                              String tags = _tagsController.text;
 
-                        if (_isFormValid) {
-                          String title = _titleController.text;
-                          String description = _descriptionController.text;
-                          String tags = _tagsController.text;
+                              if (!_isImageSelected || _userName == null)
+                                return;
 
-                          if (!_isImageSelected || _userName == null) return;
+                              // إضافة القيمة المدخلة في حقل الفئة المخصصة إذا كانت موجودة
+                              List<String> finalCategories =
+                                  List.from(widget.selectedCategories);
+                              if (customCategory != null &&
+                                  customCategory!.isNotEmpty) {
+                                finalCategories.add(customCategory!);
+                              }
 
-                          List<String> finalCategories =
-                              List.from(widget.selectedCategories);
-                          if (customCategory != null &&
-                              customCategory!.isNotEmpty) {
-                            finalCategories.add(customCategory!);
-                          }
+                              FirebaseFirestore firestore =
+                                  FirebaseFirestore.instance;
 
-                          FirebaseFirestore firestore =
-                              FirebaseFirestore.instance;
-                          DocumentReference docRef =
-                              await firestore.collection('stories').add({
-                            'imageUrl': _imageUrl,
-                            'title': title,
-                            'description': description,
-                            'tags': tags,
-                            'selectedLanguage': widget.selectedLanguage,
-                            'isMature': widget.isMature,
-                            'isCompleted': widget.isCompleted,
-                            'selectedCategories': finalCategories,
-                            'author': _userName,
-                            'authorId': FirebaseAuth.instance.currentUser?.uid,
-                            'createdAt': FieldValue.serverTimestamp(),
-                          });
+                              // إضافة القصة إلى قاعدة البيانات وجلب الوثيقة المرجعية
+                              DocumentReference docRef =
+                                  await firestore.collection('stories').add({
+                                'imageUrl': _imageUrl,
+                                'title': title,
+                                'description': description,
+                                'tags': tags,
+                                'selectedLanguage': widget.selectedLanguage,
+                                'isMature': widget.isMature,
+                                'isCompleted': widget.isCompleted,
+                                'selectedCategories':
+                                    finalCategories, // إضافة الفئات النهائية
+                                'author': _userName,
+                                'authorId': FirebaseAuth.instance.currentUser
+                                    ?.uid, // إضافة authorId
+                                'isDraft': false,
+                                'readerCount': 0,
+                                'createdAt': FieldValue.serverTimestamp(),
+                              });
 
-                          String storyId = docRef.id;
+                              // جلب story id
+                              String storyId = docRef.id;
 
-                          await firestore
-                              .collection('stories')
-                              .doc(storyId)
-                              .update({
-                            'storyId': storyId,
-                          });
+                              // تحديث الوثيقة لإضافة story id
+                              await firestore
+                                  .collection('stories')
+                                  .doc(storyId)
+                                  .update({
+                                'storyId':
+                                    storyId, // إضافة story id إلى الوثيقة
+                              });
 
-                          Navigator.push(context, MaterialPageRoute(
-                            builder: (context) {
-                              return WriteStoryScreen(
-                                storyId: storyId,
-                              );
-                            },
-                          ));
-                        }
-                      },
+                              Navigator.push(context, MaterialPageRoute(
+                                builder: (context) {
+                                  return WriteStoryScreen(
+                                    storyId: storyId,
+                                  );
+                                },
+                              ));
+                            }
+                          : null,
                       child: Text(
                         Textclass.Save,
                         style: TextStyles.Bold18.copyWith(
@@ -299,9 +269,13 @@ class _EditStoryFormState extends State<EditStoryForm> {
                   ],
                 ),
                 _buildTextFieldWithValidation(
-                    Textclass.Title, _titleController),
+                  Textclass.Title,
+                  _titleController,
+                ),
                 _buildTextFieldWithValidation(
-                    Textclass.Description, _descriptionController),
+                  Textclass.Description,
+                  _descriptionController,
+                ),
 
                 // Category Section
                 Padding(
@@ -338,11 +312,13 @@ class _EditStoryFormState extends State<EditStoryForm> {
                           ],
                         ),
                       ),
-                      const SizedBox(
+                      SizedBox(
                         height: 80,
                         child: Divider(
                           height: 1,
-                          color: Colorclass.brown,
+                          color: widget.selectedCategories.isNotEmpty
+                              ? Colorclass.brown
+                              : Colors.red,
                         ),
                       ),
                     ],
@@ -353,7 +329,9 @@ class _EditStoryFormState extends State<EditStoryForm> {
                 Transform.translate(
                   offset: const Offset(0, -40),
                   child: _buildTextFieldWithValidation(
-                      Textclass.Tags, _tagsController), // إضافة حقل Tags
+                    Textclass.Tags,
+                    _tagsController,
+                  ), // إضافة حقل Tags
                 ),
 
                 Transform.translate(
@@ -404,11 +382,14 @@ class _EditStoryFormState extends State<EditStoryForm> {
                             ],
                           ),
                         ),
-                        const SizedBox(
+                        SizedBox(
                           height: 80,
                           child: Divider(
                             height: 1,
-                            color: Colorclass.brown,
+                            color: selectedLanguage.isEmpty
+                                ? Colorclass.Red
+                                : Colorclass
+                                    .brown, // تغيير اللون إذا كان فارغًا
                           ),
                         ),
                       ],
@@ -479,7 +460,9 @@ class _EditStoryFormState extends State<EditStoryForm> {
   }
 
   Widget _buildTextFieldWithValidation(
-      String labelText, TextEditingController controller) {
+    String labelText,
+    TextEditingController controller,
+  ) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Stack(
@@ -503,16 +486,20 @@ class _EditStoryFormState extends State<EditStoryForm> {
                 controller: controller, // إضافة الـ controller هنا
                 decoration: const InputDecoration(
                   border: UnderlineInputBorder(
-                    borderSide:
-                        BorderSide(color: Colorclass.brown), // اللون البني
+                    borderSide: BorderSide(
+                      color: Colorclass
+                          .brown, // إذا كان الحقل غير فارغ، يبقى اللون كما هو
+                    ),
                   ),
                   focusedBorder: UnderlineInputBorder(
-                    borderSide:
-                        BorderSide(color: Colorclass.brown), // اللون البني
+                    borderSide: BorderSide(
+                      color: Colorclass.brown,
+                    ),
                   ),
                   enabledBorder: UnderlineInputBorder(
-                    borderSide:
-                        BorderSide(color: Colorclass.brown), // اللون البني
+                    borderSide: BorderSide(
+                      color: Colorclass.brown,
+                    ),
                   ),
                   contentPadding:
                       EdgeInsets.symmetric(vertical: 10, horizontal: 16),

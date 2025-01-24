@@ -73,7 +73,6 @@ class _ReadingspacescreenState extends State<Readingspacescreen> {
         automaticallyImplyLeading: false,
         forceMaterialTransparency: true,
         backgroundColor: Colorclass.white,
-        
         leading: IconButton(
           icon: const Icon(Icons.keyboard_backspace,
               color: Colorclass.dustyPink, size: 30),
@@ -82,7 +81,6 @@ class _ReadingspacescreenState extends State<Readingspacescreen> {
           },
         ),
         title: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Text(
               title,
@@ -98,6 +96,7 @@ class _ReadingspacescreenState extends State<Readingspacescreen> {
           ],
         ),
         centerTitle: true,
+
       ),
       body: partsList.isEmpty
           ? Center(
@@ -112,45 +111,16 @@ class _ReadingspacescreenState extends State<Readingspacescreen> {
                 itemCount: partsList.length,
                 itemBuilder: (context, index) {
                   final part = partsList[index];
+                  bool isLast = index == partsList.length - 1; // تحقق إذا كان العنصر الأخير
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            "ch.${index + 1}", // Display "Chapter" with the number
-                            style: TextStyles.Bold20.copyWith(
-                              color: Colorclass.brown,
-                            ),
-                          ),
-                          Row(
-                            children: [
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.favorite_border,
-                                  color: Colorclass.brown,
-                                  size: 30,
-                                ),
-                                onPressed: () {
-                                  // Handle like action
-                                },
-                              ),
-                              const SizedBox(width: 10),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.chat_bubble_outline,
-                                  color: Colorclass.brown,
-                                  size: 30,
-                                ),
-                                onPressed: () {
-                                  // Handle comment action
-                                },
-                              ),
-                            ],
-                          ),
-                        ],
+                      Text(
+                        "ch.${index + 1}", // Display "Chapter" with the number
+                        style: TextStyles.Bold20.copyWith(
+                          color: Colorclass.brown,
+                        ),
                       ),
                       const SizedBox(height: 5),
                       Text(
@@ -164,7 +134,40 @@ class _ReadingspacescreenState extends State<Readingspacescreen> {
                         part['content'] ?? "No Content",
                         style: TextStyle(fontSize: fontSize, color: Colorclass.brown),
                       ),
-                      const Divider(color: Colorclass.grey, thickness: 1),
+                      if (!isLast) // إضافة الخط فقط إذا لم يكن العنصر الأخير
+                        const Divider(color: Colorclass.grey, thickness: 1),
+                      if (isLast) // إضافة الأيقونات إذا كان العنصر الأخير
+                        Align(
+                          alignment: Alignment.bottomLeft,
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 20),
+                            child: Row(
+                              children: [
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.favorite_border,
+                                    color: Colorclass.brown,
+                                    size: 30,
+                                  ),
+                                  onPressed: () {
+                                    // Handle like action
+                                  },
+                                ),
+                                const SizedBox(width: 20),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.chat_bubble_outline,
+                                    color: Colorclass.brown,
+                                    size: 30,
+                                  ),
+                                  onPressed: () {
+                                    // Handle comment action
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                     ],
                   );
                 },
@@ -180,64 +183,64 @@ class _ReadingspacescreenState extends State<Readingspacescreen> {
     );
   }
 
-Widget _buildFontSizeSlider() {
-  return Stack(
-    children: [
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0), // حواف إضافية للداخل
-        child: Container(
-          height: 70,
-          decoration: BoxDecoration(
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(40),
-              topRight: Radius.circular(40),
+  Widget _buildFontSizeSlider() {
+    return Stack(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0), // حواف إضافية للداخل
+          child: Container(
+            height: 70,
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(40),
+                topRight: Radius.circular(40),
+              ),
+              border: Border(
+                top: BorderSide(color: Colorclass.grey, width: 3),
+                left: BorderSide(color: Colorclass.grey, width: 3),
+                right: BorderSide(color: Colorclass.grey, width: 3),
+              ),
+              color: Colorclass.white,
             ),
-            border: Border(
-              top: BorderSide(color: Colorclass.grey, width: 3),
-              left: BorderSide(color: Colorclass.grey, width: 3),
-              right: BorderSide(color: Colorclass.grey, width: 3),
+          ),
+        ),
+        Positioned(
+          top: 20.0, // تعديل الموضع لتصبح الكلمة في الأسفل قليلاً
+          left: 50.0,
+          child: Text(
+            "Font Size",
+            style: TextStyles.Bold16.copyWith(color: Colorclass.brown),
+          ),
+        ),
+        Positioned(
+          top: 40, // تعديل الموضع ليكون داخل المربع
+          left: 40, // حواف إضافية للداخل
+          right: 40, // حواف إضافية للداخل
+          child: SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              trackHeight: 4,
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
+              overlayShape: const RoundSliderOverlayShape(overlayRadius: 15),
+              thumbColor: Colorclass.white,
+              activeTrackColor: Colorclass.brown,
+              inactiveTrackColor: Colorclass.grey,
+              overlayColor: Colorclass.brown.withOpacity(0.2),
             ),
-            color: Colorclass.white,
+            child: Slider(
+              value: fontSize,
+              min: 12,
+              max: 24,
+              divisions: 6,
+              label: fontSize.toStringAsFixed(0),
+              onChanged: (double value) {
+                setState(() {
+                  fontSize = value;
+                });
+              },
+            ),
           ),
         ),
-      ),
-      Positioned(
-        top: 20.0, // تعديل الموضع لتصبح الكلمة في الأسفل قليلاً
-        left: 50.0,
-        child: Text(
-          "Font Size",
-          style: TextStyles.Bold16.copyWith(color: Colorclass.brown),
-        ),
-      ),
-      Positioned(
-        top: 40, // تعديل الموضع ليكون داخل المربع
-        left: 40, // حواف إضافية للداخل
-        right: 40, // حواف إضافية للداخل
-        child: SliderTheme(
-          data: SliderTheme.of(context).copyWith(
-            trackHeight: 4,
-            thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
-            overlayShape: const RoundSliderOverlayShape(overlayRadius: 15),
-            thumbColor: Colorclass.white,
-            activeTrackColor: Colorclass.brown,
-            inactiveTrackColor: Colorclass.grey,
-            overlayColor: Colorclass.brown.withOpacity(0.2),
-          ),
-          child: Slider(
-            value: fontSize,
-            min: 12,
-            max: 24,
-            divisions: 6,
-            label: fontSize.toStringAsFixed(0),
-            onChanged: (double value) {
-              setState(() {
-                fontSize = value;
-              });
-            },
-          ),
-        ),
-      ),
-    ],
-  );
-}
+      ],
+    );
+  }
 }

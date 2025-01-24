@@ -16,12 +16,14 @@ class ReadBookScreen extends StatefulWidget {
     required this.overview,
     required this.author,
     required this.bio,
+    required this.storyId,
   });
   final String title;
   final String imageUrl;
   final String overview;
   final String author;
   final String bio;
+  final String storyId;
 
   @override
   State<ReadBookScreen> createState() => _ReadBookScreenState();
@@ -162,37 +164,74 @@ class _ReadBookScreenState extends State<ReadBookScreen> {
                           ),
                         ),
                         // زر "Start Reading"
+                        // زر "Start Reading"
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           child: Center(
                             child: ElevatedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => Readingspacescreen(
-                                      storyId: widget
-                                          .title, // يمكنك تعديل هذا لتمرير الـ ID الفعلي للقصة
-                                      partTitle:
-                                          "Part 1", // يمكنك تغيير الجزء الافتراضي إذا لزم الأمر
-                                    ),
-                                  ),
-                                );
+                              onPressed: () async {
+                                var doc = await FirebaseFirestore.instance
+                                    .collection('stories')
+                                    .doc(widget
+                                        .storyId) // Using the storyId passed to the widget
+                                    .get();
+
+                                if (doc.exists) {
+                                  // Increment the readerCount by 1
+                                  await FirebaseFirestore.instance
+                                      .collection('stories')
+                                      .doc(widget.storyId)
+                                      .update({
+                                    'readerCount': FieldValue.increment(1),
+                                  });
+
+                                  // Fetch the story parts
+                                  var partsSnapshot = await FirebaseFirestore
+                                      .instance
+                                      .collection('stories')
+                                      .doc(doc.id)
+                                      .collection('parts')
+                                      .get();
+
+                                  if (partsSnapshot.docs.isNotEmpty) {
+                                    List<Map<String, dynamic>> partsList = [];
+                                    for (var partDoc in partsSnapshot.docs) {
+                                      partsList.add({
+                                        'partTitle': partDoc['partTitle'],
+                                        'content': partDoc['content'],
+                                      });
+                                    }
+
+                                    // Navigate to the reading page
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            Readingspacescreen(storyId: doc.id),
+                                      ),
+                                    );
+                                  } else {
+                                    print('No parts found');
+                                  }
+                                } else {
+                                  print('Story not found with ID: ${doc.id}');
+                                }
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colorclass.dustyPink,
+                                backgroundColor:
+                                    Colorclass.dustyPink, // اللون الأساسي للزر
                                 padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                  horizontal: 25,
-                                ),
+                                    horizontal: 25,
+                                    vertical: 12), // المسافات الداخلية
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
+                                  borderRadius: BorderRadius.circular(
+                                      30), // حواف مستديرة للزر
                                 ),
                               ),
                               child: Text(
                                 "Start Reading",
                                 style: TextStyles.Bold24.copyWith(
-                                  color: Colorclass.white,
+                                  color: Colors.white, // لون النص
                                 ),
                               ),
                             ),

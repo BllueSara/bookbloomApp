@@ -42,13 +42,21 @@ class _WriteingspacescreenState extends State<Writeingspacescreen> {
   List<String> storyOverView = []; // متغير لوصف القصة
   List<String> storyauthorname = []; // متغير لوصف القصة
   List<String> storybio = []; // متغير لوصف القصة
+  List<String> storyIds = [];
+
+  List<String> draftImages = [];
+  List<String> draftTitle = []; // متغير لعنوان القصة
+  List<String> draftOverView = []; // متغير لوصف القصة
+  List<String> draftauthorname = []; // متغير لوصف القصة
+  List<String> draftbio = []; // متغير لوصف القصة
+  List<String> draftIds = [];
 
   @override
   void initState() {
     super.initState();
     _fetchUserData();
     _fetchStoryData();
-    _fetchbioData();
+    _fetchDraftData();
     _loadProfilePicture();
   }
 
@@ -60,8 +68,6 @@ class _WriteingspacescreenState extends State<Writeingspacescreen> {
     });
   }
 
-
-
   // جلب بيانات المستخدم من Firebase
   void _fetchUserData() async {
     User? user = FirebaseAuth.instance.currentUser;
@@ -72,7 +78,7 @@ class _WriteingspacescreenState extends State<Writeingspacescreen> {
           .get();
       setState(() {
         displayName = userData['displayName'];
-        username = '' + userData['username'];
+        username = userData['username'];
       });
     }
   }
@@ -81,12 +87,34 @@ class _WriteingspacescreenState extends State<Writeingspacescreen> {
   void _fetchStoryData() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
+      // جلب بيانات القصص (بما في ذلك المسودات والمنشورات)
       QuerySnapshot storyData = await FirebaseFirestore.instance
           .collection('stories')
-          .where('authorId', isEqualTo: user.uid)
+          .where('authorId', isEqualTo: user.uid) // الفلترة حسب المؤلف
           .get();
 
+      // جلب بيانات المستخدم (السيرة الذاتية)
+      DocumentSnapshot userData = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      // جمع جميع قيم readerCount
+      int totalReaderCount = 0;
+
+      for (var doc in storyData.docs) {
+        var data =
+            doc.data() as Map<String, dynamic>?; // تحويل البيانات إلى Map
+        if (data != null &&
+            data.containsKey('readerCount') &&
+            data['readerCount'] != null) {
+          totalReaderCount += (data['readerCount'] as num).toInt();
+        }
+      }
+
       setState(() {
+        // تخزين القيم في القوائم
+        storyIds = storyData.docs.map((doc) => doc.id).toList();
         storyTitle =
             storyData.docs.map((doc) => doc['title'] as String).toList();
         storyImages =
@@ -95,25 +123,73 @@ class _WriteingspacescreenState extends State<Writeingspacescreen> {
             storyData.docs.map((doc) => doc['description'] as String).toList();
         storyauthorname =
             storyData.docs.map((doc) => doc['author'] as String).toList();
-        publishedBooksCount = storyData.docs.length;
-      });
+        storybio = List.generate(
+            storyData.docs.length, (index) => userData['bio'] as String);
 
-      // حساب عدد القراء
+        // تخزين العدد الإجمالي للمقروءات
+        readersCount = totalReaderCount;
+
+        // حساب عدد الكتب (بما في ذلك المسودات والمنشورات)
+        publishedBooksCount = storyData.docs.length;
+
+        // حساب عدد الكتب المسودة (التي تحتوي على isDraft: true)
+        int draftBooksCount = storyData.docs.where((doc) {
+          var data = doc.data() as Map<String, dynamic>?;
+          return data != null &&
+              data.containsKey('isDraft') &&
+              data['isDraft'] == true;
+        }).length;
+
+        // حساب عدد الكتب المنشورة (التي لا تحتوي على isDraft أو تحتوي على isDraft: false)
+        int publishedBooksWithoutDraft = storyData.docs.where((doc) {
+          var data = doc.data() as Map<String, dynamic>?;
+          return data != null &&
+              (data.containsKey('isDraft') ? data['isDraft'] == false : true);
+        }).length;
+
+        print("عدد الكتب المسودة: $draftBooksCount");
+        print(
+            "عدد الكتب المنشورة (بدون خانة isDraft أو خانة isDraft = false): $publishedBooksWithoutDraft");
+
+        // تأكد من حساب العدد الكلي للكتب بشكل صحيح
+        print("إجمالي عدد الكتب (المسودات والمنشورات): $publishedBooksCount");
+      });
     }
   }
 
-  void _fetchbioData() async {
+  void _fetchDraftData() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      QuerySnapshot storyData = await FirebaseFirestore.instance
-          .collection('users')
-          .where('bio', isEqualTo: user.uid)
-          .get();
-      setState(() {
-        storybio = storyData.docs.map((doc) => doc['bio'] as String).toList();
-      });
+      // جلب بيانات القصص
+      QuerySnapshot draftData = await FirebaseFirestore.instance
+          .collection('stories')
+          .where('authorId', isEqualTo: user.uid)
+          .where('isDraft', isEqualTo: true) // فلترة القصص حسب isDraft
 
-      // حساب عدد القراء
+          .get();
+
+      // جلب بيانات المستخدم (السيرة الذاتية)
+      DocumentSnapshot userData = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      setState(() {
+        // تخزين القيم في القوائم
+        draftIds = draftData.docs.map((doc) => doc.id).toList();
+        draftTitle =
+            draftData.docs.map((doc) => doc['title'] as String).toList();
+        draftImages =
+            draftData.docs.map((doc) => doc['imageUrl'] as String).toList();
+        draftOverView =
+            draftData.docs.map((doc) => doc['description'] as String).toList();
+        draftauthorname =
+            draftData.docs.map((doc) => doc['author'] as String).toList();
+        draftbio = List.generate(
+            draftData.docs.length, (index) => userData['bio'] as String);
+
+        publishedBooksCount = draftData.docs.length;
+      });
     }
   }
 
@@ -130,8 +206,6 @@ class _WriteingspacescreenState extends State<Writeingspacescreen> {
         return EditStoryForm(
           showCategorySelection: _showCategorySelection,
           showSelectLanguage: _showSelectLanguage,
-        
-
           onMatureChanged: (value) {
             setState(() {
               isMature = value;
@@ -313,7 +387,6 @@ class _WriteingspacescreenState extends State<Writeingspacescreen> {
       }
     });
   }
-  
 
   @override
   Widget build(BuildContext context) {
@@ -438,14 +511,24 @@ class _WriteingspacescreenState extends State<Writeingspacescreen> {
                             Navigator.push(context, MaterialPageRoute(
                               builder: (context) {
                                 return ReadBookScreen(
-                                  title: storyTitle[index - 1], // تمرير العنوان
-                                  imageUrl:
-                                      storyImages[index - 1], // تمرير الصورة
-                                  overview: storyOverView[index - 1],
-                                  author: storyauthorname[index - 1],
-                                  bio: index - 1 < storybio.length
+                                  title: storyTitle.isNotEmpty
+                                      ? storyTitle[index - 1]
+                                      : '',
+                                  overview: storyOverView.isNotEmpty
+                                      ? storyOverView[index - 1]
+                                      : '',
+                                  bio: storybio.isNotEmpty
                                       ? storybio[index - 1]
-                                      : "Bio not available",
+                                      : 'hello ',
+                                  author: storyauthorname.isNotEmpty
+                                      ? storyauthorname[index - 1]
+                                      : '',
+                                  imageUrl: storyImages.isNotEmpty
+                                      ? storyImages[index - 1]
+                                      : '',
+                                  storyId: storyIds.isNotEmpty
+                                      ? storyIds[index - 1]
+                                      : '',
                                 );
                               },
                             ));
@@ -458,21 +541,37 @@ class _WriteingspacescreenState extends State<Writeingspacescreen> {
                               color: Colorclass.grey,
                               borderRadius: BorderRadius.circular(16),
                               image: DecorationImage(
-                                image: NetworkImage(
-                                    storyImages[index - 1]), // عرض صورة القصة
+                                image: NetworkImage(storyImages[index - 1]),
                                 fit: BoxFit.cover,
                               ),
                             ),
                           ),
                         ),
-                        Transform.translate(
-                          offset: const Offset(30, 180),
-                          child: Text(
-                            storyTitle.isNotEmpty
-                                ? storyTitle[index - 1]
-                                : 'No Title',
-                            style: TextStyles.Bold18.copyWith(
-                              color: Colorclass.brown,
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8),
+                          child: Align(
+                            alignment: Alignment.bottomCenter,
+                            child: Container(
+                              width: 120,
+                              padding: const EdgeInsets.all(8.0),
+                              decoration: BoxDecoration(
+                                color: Colors.black
+                                    .withOpacity(0.3), // خلفية نص نصف شفافة
+                                borderRadius: const BorderRadius.only(
+                                  bottomLeft: Radius.circular(16),
+                                  bottomRight: Radius.circular(16),
+                                ),
+                              ),
+                              child: Text(
+                                storyTitle.isNotEmpty
+                                    ? storyTitle[index - 1]
+                                    : '',
+                                textAlign: TextAlign.center,
+                                style: TextStyles.hint14.copyWith(
+                                  color: Colors
+                                      .white, // لون النص أبيض ليظهر على الخلفية
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -482,11 +581,12 @@ class _WriteingspacescreenState extends State<Writeingspacescreen> {
                 },
               ),
             ),
+
             const SizedBox(height: 30),
             Transform.translate(
               offset: const Offset(-130, 0),
               child: const Text(
-                Textclass.Draft,
+                'My Draft',
                 style: TextStyles.Bold18,
                 textAlign: TextAlign.left,
               ),
@@ -496,20 +596,50 @@ class _WriteingspacescreenState extends State<Writeingspacescreen> {
               height: 180,
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                itemCount: picks.length,
+                itemCount: draftImages.length,
                 itemBuilder: (context, index) {
-                  return Container(
-                    width: 120,
-                    height: 180,
-                    margin: const EdgeInsets.symmetric(horizontal: 8),
-                    decoration: BoxDecoration(
-                      color: Colorclass.grey,
-                      borderRadius: BorderRadius.circular(16),
-                      image: DecorationImage(
-                        image: AssetImage(picks[index]),
-                        fit: BoxFit.cover,
+                  return Stack(
+                    children: [
+                      Container(
+                        width: 120,
+                        height: 180,
+                        margin: const EdgeInsets.symmetric(horizontal: 8),
+                        decoration: BoxDecoration(
+                          color: Colorclass.grey,
+                          borderRadius: BorderRadius.circular(16),
+                          image: DecorationImage(
+                            image: NetworkImage(draftImages[index]),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
                       ),
-                    ),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: Align(
+                          alignment: Alignment.bottomCenter,
+                          child: Container(
+                            width: 120,
+                            padding: const EdgeInsets.all(8.0),
+                            decoration: BoxDecoration(
+                              color: Colors.black
+                                  .withOpacity(0.3), // خلفية نص نصف شفافة
+                              borderRadius: const BorderRadius.only(
+                                bottomLeft: Radius.circular(16),
+                                bottomRight: Radius.circular(16),
+                              ),
+                            ),
+                            child: Text(
+                              draftTitle.isNotEmpty ? draftTitle[index] : '',
+                              textAlign: TextAlign.center,
+                              style: TextStyles.hint14.copyWith(
+                                color: Colors
+                                    .white, // لون النص أبيض ليظهر على الخلفية
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   );
                 },
               ),
