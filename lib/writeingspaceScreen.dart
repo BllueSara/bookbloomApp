@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:bookbloom/WriteStoryScreen.dart';
+import 'package:bookbloom/mainpage.dart';
 import 'package:bookbloom/readbookScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -18,11 +19,6 @@ class Writeingspacescreen extends StatefulWidget {
 }
 
 class _WriteingspacescreenState extends State<Writeingspacescreen> {
-  final List<String> picks = [
-    'images/book1.png',
-    'images/book2.png',
-  ];
-
   List<String> selectedCategories = [];
 
   bool isCopyright = false; // متغير لحالة Switch
@@ -83,7 +79,72 @@ class _WriteingspacescreenState extends State<Writeingspacescreen> {
     }
   }
 
-  // جلب صور القصص من Firebase
+  void _confirmDeleteStory(String storyId) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colorclass.white,
+          title: const Text('Confirm Deletion'),
+          content: const Text('Are you sure you want to delete this story?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // إغلاق الحوار
+              },
+              child: Text(
+                'Cancel',
+                style: TextStyles.Bold16.copyWith(
+                  color: Colorclass.brown, // لون النص أحمر
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                _deleteStory(storyId); // تنفيذ الحذف
+
+                Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const MainPage(index: 1),
+                    ));
+              },
+              child: Text(
+                'Delete',
+                style: TextStyles.Bold16.copyWith(
+                  color: Colorclass.Red, // لون النص أحمر
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _deleteStory(String storyId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('stories')
+          .doc(storyId)
+          .delete();
+      setState(() {
+        storyIds.remove(storyId);
+        // تحديث القوائم المحلية حسب الحاجة
+        storyTitle.removeWhere((title) => storyIds.contains(storyId));
+        storyImages.removeWhere((image) => storyIds.contains(storyId));
+        storyOverView.removeWhere((overview) => storyIds.contains(storyId));
+        storyauthorname.removeWhere((author) => storyIds.contains(storyId));
+        storybio.removeWhere((bio) => storyIds.contains(storyId));
+      });
+    } catch (e) {
+      print("Error deleting story: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to delete story')),
+      );
+    }
+  }
+
   void _fetchStoryData() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
@@ -99,7 +160,7 @@ class _WriteingspacescreenState extends State<Writeingspacescreen> {
           .doc(user.uid)
           .get();
 
-      // جمع جميع قيم readerCount بغض النظر عن isDraft
+      // جمع جميع قيم readerCount (يشمل كل الكتب)
       int totalReaderCount = storyData.docs.fold<int>(0, (sum, doc) {
         var data = doc.data() as Map<String, dynamic>?;
         if (data != null && data.containsKey('readerCount')) {
@@ -109,47 +170,39 @@ class _WriteingspacescreenState extends State<Writeingspacescreen> {
         return sum;
       });
 
+      // تصفية البيانات لاستبعاد المسودات (isDraft: true) من العرض فقط
+      var filteredStories = storyData.docs.where((doc) {
+        var data = doc.data() as Map<String, dynamic>?;
+        return data == null ||
+            !data.containsKey('isDraft') ||
+            data['isDraft'] == false;
+      }).toList();
+
       setState(() {
-        // تخزين القيم في القوائم
-        storyIds = storyData.docs.map((doc) => doc.id).toList();
+        // إجمالي عدد الكتب (بما في ذلك المسودات والمنشورات)
+        int totalBooksCount = storyData.docs.length;
+
+        // تخزين القيم في القوائم مع استبعاد المسودات
+        storyIds = filteredStories.map((doc) => doc.id).toList();
         storyTitle =
-            storyData.docs.map((doc) => doc['title'] as String).toList();
+            filteredStories.map((doc) => doc['title'] as String).toList();
         storyImages =
-            storyData.docs.map((doc) => doc['imageUrl'] as String).toList();
+            filteredStories.map((doc) => doc['imageUrl'] as String).toList();
         storyOverView =
-            storyData.docs.map((doc) => doc['description'] as String).toList();
+            filteredStories.map((doc) => doc['description'] as String).toList();
         storyauthorname =
-            storyData.docs.map((doc) => doc['author'] as String).toList();
+            filteredStories.map((doc) => doc['author'] as String).toList();
         storybio = List.generate(
-            storyData.docs.length, (index) => userData['bio'] as String);
+            filteredStories.length, (index) => userData['bio'] as String);
 
         // تخزين العدد الإجمالي للمقروءات
         readersCount = totalReaderCount;
 
-        // حساب عدد الكتب (بما في ذلك المسودات والمنشورات)
-        publishedBooksCount = storyData.docs.length;
+        // عرض الإجمالي بدلًا من المنشورة فقط
+        publishedBooksCount = totalBooksCount;
 
-        // حساب عدد الكتب المسودة (التي تحتوي على isDraft: true)
-        int draftBooksCount = storyData.docs.where((doc) {
-          var data = doc.data() as Map<String, dynamic>?;
-          return data != null &&
-              data.containsKey('isDraft') &&
-              data['isDraft'] == true;
-        }).length;
-
-        // حساب عدد الكتب المنشورة (التي لا تحتوي على isDraft أو تحتوي على isDraft: false)
-        int publishedBooksWithoutDraft = storyData.docs.where((doc) {
-          var data = doc.data() as Map<String, dynamic>?;
-          return data != null &&
-              (data.containsKey('isDraft') ? data['isDraft'] == false : true);
-        }).length;
-
-        print("عدد الكتب المسودة: $draftBooksCount");
-        print(
-            "عدد الكتب المنشورة (بدون خانة isDraft أو خانة isDraft = false): $publishedBooksWithoutDraft");
-
-        // تأكد من حساب العدد الكلي للكتب بشكل صحيح
-        print("إجمالي عدد الكتب (المسودات والمنشورات): $publishedBooksCount");
+        print("عدد الكتب المسودة: ${totalBooksCount - filteredStories.length}");
+        print("إجمالي عدد الكتب: $totalBooksCount");
         print("إجمالي عدد القراء: $readersCount");
       });
     }
@@ -571,6 +624,19 @@ class _WriteingspacescreenState extends State<Writeingspacescreen> {
                             ),
                           ),
                         ),
+                        Positioned(
+                          bottom: -5,
+                          left: 90,
+                          child: IconButton(
+                              onPressed: () {
+                                _confirmDeleteStory(storyIds[index - 1]);
+                              },
+                              icon: const Icon(
+                                Icons.more_vert,
+                                color: Colorclass.white,
+                                size: 20,
+                              )),
+                        )
                       ],
                     );
                   }
@@ -636,25 +702,105 @@ class _WriteingspacescreenState extends State<Writeingspacescreen> {
                         ),
                       ),
                       Positioned(
-                        bottom: -5,
-                        left: 90,
+                        bottom: -15,
+                        left: 80,
                         child: IconButton(
-                            onPressed: () {
-                              Navigator.push(
+                          onPressed:
+                              null, // نتركه فارغًا لأننا نستخدم PopupMenuButton
+                          icon: PopupMenuButton<String>(
+                            color: Colorclass.white,
+                            onSelected: (value) async {
+                              if (value == 'edit') {
+                                // خيار التعديل
+                                Navigator.push(
                                   context,
                                   MaterialPageRoute(
                                     builder: (context) => WriteStoryScreen(
                                       storyId: draftIds[index],
                                       isEdit: true,
                                     ),
-                                  ));
-                              print(draftIds[index]);
+                                  ),
+                                );
+                              } else if (value == 'delete') {
+                                // خيار الحذف مع تأكيد المستخدم
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    backgroundColor: Colorclass.white,
+                                    title: const Text('Confirm Deletion'),
+                                    content: const Text(
+                                        'Are you sure you want to delete this draft?'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pop(context, false),
+                                        child: Text(
+                                          'Cancel',
+                                          style: TextStyles.Bold16.copyWith(
+                                            color: Colorclass
+                                                .brown, // لون النص أحمر
+                                          ),
+                                        ),
+                                      ),
+                                      TextButton(
+                                        onPressed: () =>
+                                            Navigator.pushReplacement(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      const MainPage(index: 1),
+                                                )),
+                                        child: Text(
+                                          'Delete',
+                                          style: TextStyles.Bold16.copyWith(
+                                            color:
+                                                Colorclass.Red, // لون النص أحمر
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+
+                                if (confirm == true) {
+                                  // حذف المسودة من Firebase
+                                  await FirebaseFirestore.instance
+                                      .collection('stories')
+                                      .doc(draftIds[index])
+                                      .delete();
+
+                                  setState(() {
+                                    draftIds.removeAt(index);
+                                    draftTitle.removeAt(index);
+                                    draftImages.removeAt(index);
+                                    draftOverView.removeAt(index);
+                                    draftauthorname.removeAt(index);
+                                    draftbio.removeAt(index);
+                                  });
+                                }
+                              }
                             },
                             icon: const Icon(
                               Icons.more_vert,
                               color: Colorclass.white,
                               size: 20,
-                            )),
+                            ),
+                            itemBuilder: (BuildContext context) => [
+                              const PopupMenuItem<String>(
+                                value: 'edit',
+                                child: ListTile(
+                                  title: Text('Edit'),
+                                ),
+                              ),
+                              const PopupMenuItem<String>(
+                                value: 'delete',
+                                child: ListTile(
+                                  title: Text('Delete'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       )
                     ],
                   );

@@ -161,6 +161,7 @@ class _ReadingprofileState extends State<Readingprofile> {
           readersCount = user.data().containsKey('readersCount')
               ? user['readersCount']
               : 0; // تعيين 0 إذا لم يكن الحقل موجودًا
+          storybio = [user.data().containsKey('bio') ? user['bio'] : 'No'];
         });
 
         // جلب القصص من مجموعة "reading" داخل مستند المستخدم
@@ -256,6 +257,13 @@ class _ReadingprofileState extends State<Readingprofile> {
         elevation: 0,
         scrolledUnderElevation: 0,
         forceMaterialTransparency: true,
+        leading: IconButton(
+          icon: const Icon(Icons.keyboard_backspace,
+              color: Colorclass.dustyPink, size: 40),
+          onPressed: () {
+            Navigator.pop(context);
+          },
+        ),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -335,9 +343,7 @@ class _ReadingprofileState extends State<Readingprofile> {
                                 imageUrl: storyImages[index],
                                 overview: storyOverView[index],
                                 author: storyauthorname[index],
-                                bio: storybio.isNotEmpty
-                                    ? storybio.first
-                                    : 'No Bio Available',
+                                bio: storybio.isNotEmpty ? storybio.first : '',
                                 storyId: storyIds[index],
                               );
                             },
