@@ -371,6 +371,7 @@ class _ShelfBookState extends State<ShelfBook> {
       builder: (BuildContext context) {
         TextEditingController shelfNameController = TextEditingController();
         return AlertDialog(
+          backgroundColor: Colorclass.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),

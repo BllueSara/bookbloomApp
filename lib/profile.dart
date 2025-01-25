@@ -79,6 +79,7 @@ class _ProfileState extends State<Profile> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colorclass.white,
           title: Text(
             "Edit Display Name",
             style: TextStyles.Bold16.copyWith(color: Colorclass.brown),
@@ -294,6 +295,7 @@ class _ProfileState extends State<Profile> {
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
+            backgroundColor: Colorclass.white,
             title: Text(
               "Log Out",
               style: TextStyles.Bold18.copyWith(color: Colorclass.brown),
@@ -365,6 +367,7 @@ class _ProfileState extends State<Profile> {
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
+            backgroundColor: Colorclass.white,
             title: Text(
               "Delete Account",
               style: TextStyles.Bold16.copyWith(color: Colorclass.brown),
@@ -439,6 +442,7 @@ class _ProfileState extends State<Profile> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colorclass.white,
           title: Text(
             "Confirm Deletion",
             style: TextStyles.Bold16.copyWith(color: Colorclass.brown),
@@ -561,6 +565,7 @@ class _ProfileState extends State<Profile> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: Colorclass.white,
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -597,13 +602,6 @@ class _ProfileState extends State<Profile> {
         );
       },
     );
-  }
-
-  // خاصية تغيير وضع التطبيق
-  void _toggleDarkMode(bool value) {
-    setState(() {
-      isDarkMode = value;
-    });
   }
 
   @override
@@ -724,13 +722,7 @@ class _ProfileState extends State<Profile> {
                   isPassword: true),
               const SizedBox(height: 30),
 
-              Align(
-                alignment: Alignment.centerLeft,
-                child: _buildModeSwitch(),
-              ),
-              const SizedBox(
-                height: 50,
-              ), // المسافة لزر تسجيل الخروج
+              // المسافة لزر تسجيل الخروج
               GestureDetector(
                 onTap: () => _confirmAction("logout"),
                 child: _buildLogoutButton(),
@@ -773,6 +765,7 @@ class _ProfileState extends State<Profile> {
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
+              backgroundColor: Colorclass.white,
               title: Text(
                 "Edit $hint",
                 style: TextStyles.Bold16.copyWith(color: Colorclass.brown),
@@ -911,45 +904,6 @@ class _ProfileState extends State<Profile> {
                 ],
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildModeSwitch() {
-    return Container(
-      height: 50,
-      width: 150,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(25),
-        gradient: Colorclass.gradient,
-      ),
-      child: Center(
-        child: Container(
-          height: 40,
-          width: 140,
-          decoration: BoxDecoration(
-            color: Colorclass.white,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 16.0),
-                child: Text(
-                  "Mode",
-                  style: TextStyles.normal16.copyWith(color: Colorclass.brown),
-                ),
-              ),
-              Switch(
-                value: isDarkMode,
-                onChanged: _toggleDarkMode,
-                activeColor: Colorclass.brown,
-                inactiveThumbColor: Colorclass.grey,
-              ),
-            ],
           ),
         ),
       ),
