@@ -23,6 +23,7 @@ class _ShelfBookState extends State<ShelfBook> {
   int publishedBooksCount = 0;
   List<String> storybio = [];
   List<String> storyIds = [];
+
   @override
   void initState() {
     super.initState();
@@ -168,6 +169,9 @@ class _ShelfBookState extends State<ShelfBook> {
       appBar: AppBar(
         backgroundColor: Colorclass.white,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        automaticallyImplyLeading: false,
+        forceMaterialTransparency: true,
         title: Text(
           "My Book Shelf",
           style: TextStyles.Bold16.copyWith(color: Colorclass.brown),
@@ -198,10 +202,6 @@ class _ShelfBookState extends State<ShelfBook> {
                 .doc(shelves[index])
                 .get(),
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
               if (!snapshot.hasData || snapshot.data == null) {
                 return const SizedBox();
               }
@@ -308,18 +308,20 @@ class _ShelfBookState extends State<ShelfBook> {
                                         padding: const EdgeInsets.all(8.0),
                                         decoration: BoxDecoration(
                                           color: Colors.black.withOpacity(
-                                              0.3), // خلفية شفافة للنص
+                                              0.3), // خلفية نص نصف شفافة
                                           borderRadius: const BorderRadius.only(
                                             bottomLeft: Radius.circular(16),
                                             bottomRight: Radius.circular(16),
                                           ),
                                         ),
                                         child: Text(
-                                          book['title'] ??
-                                              'Untitled', // استخدام عنوان افتراضي
+                                          storyTitle.isNotEmpty
+                                              ? storyTitle[bookIndex]
+                                              : '',
                                           textAlign: TextAlign.center,
                                           style: TextStyles.hint14.copyWith(
-                                            color: Colors.white, // نص أبيض
+                                            color: Colors
+                                                .white, // لون النص أبيض ليظهر على الخلفية
                                           ),
                                         ),
                                       ),

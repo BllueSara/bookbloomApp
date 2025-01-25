@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import 'package:bookbloom/WriteStoryScreen.dart';
 import 'package:bookbloom/readbookScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -99,18 +99,15 @@ class _WriteingspacescreenState extends State<Writeingspacescreen> {
           .doc(user.uid)
           .get();
 
-      // جمع جميع قيم readerCount
-      int totalReaderCount = 0;
-
-      for (var doc in storyData.docs) {
-        var data =
-            doc.data() as Map<String, dynamic>?; // تحويل البيانات إلى Map
-        if (data != null &&
-            data.containsKey('readerCount') &&
-            data['readerCount'] != null) {
-          totalReaderCount = (data['readerCount'] as num).toInt();
+      // جمع جميع قيم readerCount بغض النظر عن isDraft
+      int totalReaderCount = storyData.docs.fold<int>(0, (sum, doc) {
+        var data = doc.data() as Map<String, dynamic>?;
+        if (data != null && data.containsKey('readerCount')) {
+          int readerCount = (data['readerCount'] as num?)?.toInt() ?? 0;
+          return sum + readerCount;
         }
-      }
+        return sum;
+      });
 
       setState(() {
         // تخزين القيم في القوائم
@@ -153,6 +150,7 @@ class _WriteingspacescreenState extends State<Writeingspacescreen> {
 
         // تأكد من حساب العدد الكلي للكتب بشكل صحيح
         print("إجمالي عدد الكتب (المسودات والمنشورات): $publishedBooksCount");
+        print("إجمالي عدد القراء: $readersCount");
       });
     }
   }
@@ -187,8 +185,6 @@ class _WriteingspacescreenState extends State<Writeingspacescreen> {
             draftData.docs.map((doc) => doc['author'] as String).toList();
         draftbio = List.generate(
             draftData.docs.length, (index) => userData['bio'] as String);
-
-        publishedBooksCount = draftData.docs.length;
       });
     }
   }
@@ -639,11 +635,33 @@ class _WriteingspacescreenState extends State<Writeingspacescreen> {
                           ),
                         ),
                       ),
+                      Positioned(
+                        bottom: -5,
+                        left: 90,
+                        child: IconButton(
+                            onPressed: () {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => WriteStoryScreen(
+                                      storyId: draftIds[index],
+                                      isEdit: true,
+                                    ),
+                                  ));
+                              print(draftIds[index]);
+                            },
+                            icon: const Icon(
+                              Icons.more_vert,
+                              color: Colorclass.white,
+                              size: 20,
+                            )),
+                      )
                     ],
                   );
                 },
               ),
             ),
+            const SizedBox(height: 20),
           ],
         ),
       ),

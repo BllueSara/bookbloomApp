@@ -613,9 +613,12 @@ class _ProfileState extends State<Profile> {
       appBar: AppBar(
         backgroundColor: Colorclass.white,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        automaticallyImplyLeading: false,
+        forceMaterialTransparency: true,
         leading: IconButton(
           icon: const Icon(Icons.keyboard_backspace,
-              color: Colorclass.brown, size: 30),
+              color: Colorclass.dustyPink, size: 40),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -627,7 +630,6 @@ class _ProfileState extends State<Profile> {
         centerTitle: true,
       ),
       body: SingleChildScrollView(
-        physics: const NeverScrollableScrollPhysics(),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Column(
@@ -721,6 +723,11 @@ class _ProfileState extends State<Profile> {
                   ),
                   isPassword: true),
               const SizedBox(height: 30),
+
+              Align(
+                alignment: Alignment.centerLeft,
+                child: _buildModeSwitch(),
+              ),
               const SizedBox(
                 height: 50,
               ), // المسافة لزر تسجيل الخروج
@@ -904,6 +911,45 @@ class _ProfileState extends State<Profile> {
                 ],
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildModeSwitch() {
+    return Container(
+      height: 50,
+      width: 150,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(25),
+        gradient: Colorclass.gradient,
+      ),
+      child: Center(
+        child: Container(
+          height: 40,
+          width: 140,
+          decoration: BoxDecoration(
+            color: Colorclass.white,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 16.0),
+                child: Text(
+                  "Mode",
+                  style: TextStyles.normal16.copyWith(color: Colorclass.brown),
+                ),
+              ),
+              Switch(
+                value: isDarkMode,
+                onChanged: _toggleDarkMode,
+                activeColor: Colorclass.brown,
+                inactiveThumbColor: Colorclass.grey,
+              ),
+            ],
           ),
         ),
       ),

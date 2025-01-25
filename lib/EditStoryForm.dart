@@ -218,6 +218,7 @@ class _EditStoryFormState extends State<EditStoryForm> {
                                 builder: (context) {
                                   return WriteStoryScreen(
                                     storyId: storyId,
+                                    isEdit: false,
                                   );
                                 },
                               ));
@@ -312,14 +313,9 @@ class _EditStoryFormState extends State<EditStoryForm> {
                           ],
                         ),
                       ),
-                      SizedBox(
+                      const SizedBox(
                         height: 80,
-                        child: Divider(
-                          height: 1,
-                          color: widget.selectedCategories.isNotEmpty
-                              ? Colorclass.brown
-                              : Colors.red,
-                        ),
+                        child: Divider(height: 1, color: Colorclass.brown),
                       ),
                     ],
                   ),

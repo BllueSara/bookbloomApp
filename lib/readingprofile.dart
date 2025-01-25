@@ -102,16 +102,18 @@ class _ReadingprofileState extends State<Readingprofile> {
             authorStories.docs.map((doc) => doc['author'] as String).toList();
         storyIds = authorStories.docs.map((doc) => doc.id).toList();
         publishedBooksCount = authorStories.docs.length;
+
+        // حساب مجموع readerCount باستخدام fold
+        readersCount = authorStories.docs.fold<int>(0, (sum, doc) {
+          var data = doc.data() as Map<String, dynamic>?;
+          if (data != null && data.containsKey('readerCount')) {
+            int readerCount = (data['readerCount'] as num?)?.toInt() ?? 0;
+            return sum + readerCount;
+          }
+          return sum;
+        });
       });
-      for (var doc in authorStories.docs) {
-        var data = doc.data();
-        if (data.containsKey('readerCount') && data['readerCount'] != null) {
-          totalReaderCount = (data['readerCount'] as num).toInt();
-        }
-      }
-      setState(() {
-        readersCount = totalReaderCount;
-      });
+
       // جلب بيانات الكاتب من users
       var userData = await FirebaseFirestore.instance
           .collection('users')
@@ -123,6 +125,8 @@ class _ReadingprofileState extends State<Readingprofile> {
           var user = userData.docs.first;
           displayName = user['displayName'] ?? 'Unknown User';
           username = user['username'] ?? 'Unknown';
+
+          // التحقق من readersCount
           readersCount = user.data().containsKey('readersCount')
               ? user['readersCount']
               : readersCount;
@@ -138,37 +142,59 @@ class _ReadingprofileState extends State<Readingprofile> {
 
   // جلب بيانات المستخدم
   void _fetchUserData() async {
-    var userData = await FirebaseFirestore.instance
-        .collection('users')
-        .where('username', isEqualTo: widget.authorId)
-        .get();
+    try {
+      // جلب بيانات المستخدم بناءً على username
+      var userData = await FirebaseFirestore.instance
+          .collection('users')
+          .where('username', isEqualTo: widget.authorId)
+          .get();
 
-    setState(() {
-      var user = userData.docs.first;
-      displayName = user['displayName'] ?? 'Unknown User';
-      username = user['username'] ?? 'Unknown';
+      if (userData.docs.isNotEmpty) {
+        var user = userData.docs.first;
 
-      // تحقق من وجود الحقل readersCount
-      readersCount = user.data().containsKey('readersCount')
-          ? user['readersCount']
-          : readersCount; // تعيين 0 إذا لم يكن الحقل موجودًا
-    });
+        // جلب البيانات الأساسية للمستخدم
+        setState(() {
+          displayName = user['displayName'] ?? 'Unknown User';
+          username = user['username'] ?? 'Unknown';
+
+          // جلب عدد القراء
+          readersCount = user.data().containsKey('readersCount')
+              ? user['readersCount']
+              : 0; // تعيين 0 إذا لم يكن الحقل موجودًا
+        });
+
+        // جلب القصص من مجموعة "reading" داخل مستند المستخدم
+        var readingData = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.id) // الحصول على الـ ID الخاص بالمستخدم
+            .collection('reading') // الوصول إلى مجموعة "reading"
+            .get();
+
+        if (readingData.docs.isNotEmpty) {
+          setState(() {
+            // تعيين القصص إلى القوائم
+            storyTitle =
+                readingData.docs.map((doc) => doc['title'] as String).toList();
+            storyImages = readingData.docs
+                .map((doc) => doc['imageUrl'] as String)
+                .toList();
+            storyOverView = readingData.docs
+                .map((doc) => doc['overview'] as String)
+                .toList();
+            storyauthorname =
+                readingData.docs.map((doc) => doc['author'] as String).toList();
+            storyIds = readingData.docs
+                .map((doc) => doc.id) // الحصول على الـ ID الخاص بالقصص
+                .toList();
+          });
+        }
+      } else {
+        print("No user found with username: ${widget.authorId}");
+      }
+    } catch (e) {
+      print("Error fetching user data: $e");
+    }
   }
-
- void _addBookToReadersBooks(String title, String imageUrl, String author,
-    {String overview = ''}) {
-  if (!storyIds.contains(title)) {
-    setState(() {
-      storyTitle.add(title);
-      storyImages.add(imageUrl);
-      storyauthorname.add(author);
-      storyOverView.add(overview);
-      storyIds.add(title);
-    });
-  }
-}
-
-
 
   void _fetchShelvesBooks() async {
     // البحث عن الأرفف بناءً على اسم المستخدم
@@ -203,125 +229,183 @@ class _ReadingprofileState extends State<Readingprofile> {
           }
         }
 
-
         setState(() {
           _shelfBooks = booksData;
         });
       }
     }
   }
-@override
-Widget build(BuildContext context) {
-  String bookType = isUser ? "Reader Books" : "Author Books";
-  String listType = isUser ? "Reader Lists" : "Author Lists";
 
-  return Scaffold(
-    backgroundColor: Colorclass.white,
-    appBar: AppBar(
-      title: Text(
-        username,
-        style: TextStyles.Bold24,
-        textAlign: TextAlign.center,
+  @override
+  Widget build(BuildContext context) {
+    String bookType = isUser
+        ? "Reader Books"
+        : "Author Books"; // التغيير بين "User Books" و "Author Books"
+    String listType = isUser
+        ? "Reader Lists"
+        : "Author Lists"; // التغيير بين "User Books" و "Author Books"
+
+    return Scaffold(
+      backgroundColor: Colorclass.white,
+      appBar: AppBar(
+        title: Text(
+          username,
+          style: TextStyles.Bold24,
+          textAlign: TextAlign.center,
+        ),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        forceMaterialTransparency: true,
+        centerTitle: true,
       ),
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      forceMaterialTransparency: true,
-      centerTitle: true,
-    ),
-    body: SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          CircleAvatar(
-            backgroundImage:
-                profilePicture != null && profilePicture!.isNotEmpty
-                    ? (profilePicture!.startsWith('images/')
-                        ? AssetImage(profilePicture!)
-                        : FileImage(File(profilePicture!)))
-                    : const AssetImage('images/avatar1.png') as ImageProvider,
-            radius: 40,
-          ),
-          const SizedBox(height: 20),
-          Text(
-            displayName,
-            style: TextStyles.Bold18,
-          ),
-          const SizedBox(height: 30),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              Column(
-                children: [
-                  Text(
-                    publishedBooksCount.toString(),
-                    style: TextStyles.Bold18,
-                  ),
-                  const Text(
-                    Textclass.Book,
-                    style: TextStyles.normal16,
-                  ),
-                ],
-              ),
-              Column(
-                children: [
-                  Text(
-                    readersCount.toString(),
-                    style: TextStyles.Bold18,
-                  ),
-                  const Text(
-                    Textclass.Readers,
-                    style: TextStyles.normal16,
-                  ),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 15),
-          Transform.translate(
-            offset: const Offset(-130, 0),
-            child: Text(
-              bookType,
-              style: TextStyles.Bold18,
-              textAlign: TextAlign.left,
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              backgroundImage:
+                  profilePicture != null && profilePicture!.isNotEmpty
+                      ? (profilePicture!.startsWith('images/')
+                          ? AssetImage(profilePicture!)
+                          : FileImage(File(profilePicture!)))
+                      : const AssetImage('images/avatar1.png') as ImageProvider,
+              radius: 40,
             ),
-          ),
-          const SizedBox(height: 10),
-          // عرض قائمة "Readers Books"
-          SizedBox(
-            height: 250,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: storyImages.length,
-              itemBuilder: (context, index) {
-                return Column(
+            const SizedBox(height: 20),
+            Text(
+              displayName,
+              style: TextStyles.Bold18,
+            ),
+            const SizedBox(height: 30),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Column(
                   children: [
-                    GestureDetector(
-                      onTap: () {
-                        // إضافة الكتاب إلى Readers Books عند فتح الشاشة
-                        _addBookToReadersBooks(
-                          storyTitle[index],
-                          storyImages[index],
-                          storyauthorname[index],
-                          overview: storyOverView[index],
-                        );
-
-                        // الانتقال إلى صفحة قراءة الكتاب
-                        Navigator.push(context, MaterialPageRoute(
-                          builder: (context) {
-                            return ReadBookScreen(
-                              title: storyTitle[index],
-                              imageUrl: storyImages[index],
-                              overview: storyOverView[index],
-                              author: storyauthorname[index],
-                              bio: storybio.isNotEmpty
-                                  ? storybio.first
-                                  : 'No Bio Available',
-                              storyId: storyIds[index],
-                            );
-                          },
-                        ));
-                      },
-                      child: Container(
+                    Text(
+                      publishedBooksCount.toString(),
+                      style: TextStyles.Bold18,
+                    ),
+                    const Text(
+                      Textclass.Book, // عرض النص المناسب
+                      style: TextStyles.normal16,
+                    ),
+                  ],
+                ),
+                Column(
+                  children: [
+                    Text(
+                      readersCount.toString(),
+                      style: TextStyles.Bold18,
+                    ),
+                    const Text(
+                      Textclass.Readers,
+                      style: TextStyles.normal16,
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 15),
+            Transform.translate(
+              offset: const Offset(-130, 0),
+              child: Text(
+                bookType, // تغيير النص بين "author books" و "user books"
+                style: TextStyles.Bold18,
+                textAlign: TextAlign.left,
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 250, // ارتفاع كافٍ للصور والعناوين
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: storyImages.length, // عدد الكتب الخاصة بالمؤلف
+                itemBuilder: (context, index) {
+                  return Column(
+                    children: [
+                      // عرض صورة الكتاب
+                      GestureDetector(
+                        onTap: () {
+                          // الانتقال إلى صفحة قراءة الكتاب عند النقر على الصورة
+                          Navigator.push(context, MaterialPageRoute(
+                            builder: (context) {
+                              return ReadBookScreen(
+                                title: storyTitle[index],
+                                imageUrl: storyImages[index],
+                                overview: storyOverView[index],
+                                author: storyauthorname[index],
+                                bio: storybio.isNotEmpty
+                                    ? storybio.first
+                                    : 'No Bio Available',
+                                storyId: storyIds[index],
+                              );
+                            },
+                          ));
+                        },
+                        child: Container(
+                          width: 120,
+                          height: 180,
+                          margin: const EdgeInsets.symmetric(horizontal: 8),
+                          decoration: BoxDecoration(
+                            color: Colorclass.grey,
+                            borderRadius: BorderRadius.circular(16),
+                            image: DecorationImage(
+                              image: NetworkImage(
+                                  storyImages[index]), // صورة الكتاب
+                              fit: BoxFit.cover, // تغطية كاملة للصورة
+                            ),
+                          ),
+                        ),
+                      ),
+                      Transform.translate(
+                        offset: const Offset(0, -35), // تحريك العنوان إلى أسفل
+                        child: Container(
+                          width: 120,
+                          padding: const EdgeInsets.all(8.0),
+                          decoration: BoxDecoration(
+                            color: Colors.black
+                                .withOpacity(0.3), // خلفية نص نصف شفافة
+                            borderRadius: const BorderRadius.only(
+                              bottomLeft: Radius.circular(16),
+                              bottomRight: Radius.circular(16),
+                            ),
+                          ),
+                          child: Text(
+                            storyTitle[index],
+                            textAlign: TextAlign.center,
+                            style: TextStyles.hint14.copyWith(
+                              color: Colors
+                                  .white, // لون النص أبيض ليظهر على الخلفية
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+            Transform.translate(
+              offset: const Offset(-140, 0),
+              child: Text(
+                listType, // تغيير النص بين "author books" و "user books"
+                style: TextStyles.Bold18,
+              ),
+            ),
+            const SizedBox(
+              height: 10,
+            ),
+            SizedBox(
+              height: 250,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: _shelfBooks.length,
+                itemBuilder: (context, index) {
+                  final book = _shelfBooks[index];
+                  return Column(
+                    children: [
+                      Container(
                         width: 120,
                         height: 180,
                         margin: const EdgeInsets.symmetric(horizontal: 8),
@@ -329,99 +413,54 @@ Widget build(BuildContext context) {
                           color: Colorclass.grey,
                           borderRadius: BorderRadius.circular(16),
                           image: DecorationImage(
-                            image: NetworkImage(storyImages[index]),
+                            image: NetworkImage(book['imageUrl']),
                             fit: BoxFit.cover,
                           ),
                         ),
                       ),
-                    ),
-                    Transform.translate(
-                      offset: const Offset(0, -35),
-                      child: Text(
-                        storyTitle[index],
-                        textAlign: TextAlign.center,
-                        style: TextStyles.hint14.copyWith(
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-          Transform.translate(
-            offset: const Offset(-140, 0),
-            child: Text(
-              listType,
-              style: TextStyles.Bold18,
-            ),
-          ),
-          const SizedBox(height: 10),
-          // عرض قائمة الأرفف (Shelves Books)
-          SizedBox(
-            height: 250,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: _shelfBooks.length,
-              itemBuilder: (context, index) {
-                final book = _shelfBooks[index];
-                return Column(
-                  children: [
-                    Container(
-                      width: 120,
-                      height: 180,
-                      margin: const EdgeInsets.symmetric(horizontal: 8),
-                      decoration: BoxDecoration(
-                        color: Colorclass.grey,
-                        borderRadius: BorderRadius.circular(16),
-                        image: DecorationImage(
-                          image: NetworkImage(book['imageUrl']),
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                    ),
-                    Transform.translate(
-                      offset: const Offset(0, -35),
-                      child: Align(
-                        alignment: Alignment.bottomCenter,
-                        child: Container(
-                          width: 120,
-                          padding: const EdgeInsets.all(8.0),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withOpacity(0.3),
-                            borderRadius: const BorderRadius.only(
-                              bottomLeft: Radius.circular(16),
-                              bottomRight: Radius.circular(16),
+                      Transform.translate(
+                        offset: const Offset(0, -35),
+                        child: Align(
+                          alignment: Alignment.bottomCenter,
+                          child: Container(
+                            width: 120,
+                            padding: const EdgeInsets.all(8.0),
+                            decoration: BoxDecoration(
+                              color: Colors.black
+                                  .withOpacity(0.3), // خلفية نص نصف شفافة
+                              borderRadius: const BorderRadius.only(
+                                bottomLeft: Radius.circular(16),
+                                bottomRight: Radius.circular(16),
+                              ),
                             ),
-                          ),
-                          child: Text(
-                            book['title'],
-                            textAlign: TextAlign.center,
-                            style: TextStyles.hint14.copyWith(
-                              color: Colors.white,
+                            child: Text(
+                              book['title'],
+                              textAlign: TextAlign.center,
+                              style: TextStyles.hint14.copyWith(
+                                color: Colors
+                                    .white, // لون النص أبيض ليظهر على الخلفية
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                    Transform.translate(
-                      offset: const Offset(0, -30),
-                      child: Text(
-                        book['shelfName'],
-                        style: TextStyles.normal16.copyWith(
-                          color: Colorclass.brown,
+                      Transform.translate(
+                        offset: const Offset(0, -30),
+                        child: Text(
+                          book['shelfName'],
+                          style: TextStyles.normal16.copyWith(
+                            color: Colorclass.brown,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                );
-              },
+                    ],
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 }

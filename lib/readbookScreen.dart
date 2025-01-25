@@ -170,39 +170,66 @@ class _ReadBookScreenState extends State<ReadBookScreen> {
                           child: Center(
                             child: ElevatedButton(
                               onPressed: () async {
-                                var doc = await FirebaseFirestore.instance
-                                    .collection('stories')
-                                    .doc(widget
-                                        .storyId) // Using the storyId passed to the widget
-                                    .get();
-
-                                if (doc.exists) {
-                                  // Increment the readerCount by 1
-                                  await FirebaseFirestore.instance
+                                try {
+                                  // جلب القصة من قاعدة البيانات
+                                  var doc = await FirebaseFirestore.instance
                                       .collection('stories')
                                       .doc(widget.storyId)
-                                      .update({
-                                    'readerCount': FieldValue.increment(1),
-                                  });
-
-                                  // Fetch the story parts
-                                  var partsSnapshot = await FirebaseFirestore
-                                      .instance
-                                      .collection('stories')
-                                      .doc(doc.id)
-                                      .collection('parts')
                                       .get();
 
-                                  if (partsSnapshot.docs.isNotEmpty) {
-                                    List<Map<String, dynamic>> partsList = [];
-                                    for (var partDoc in partsSnapshot.docs) {
-                                      partsList.add({
-                                        'partTitle': partDoc['partTitle'],
-                                        'content': partDoc['content'],
+                                  if (doc.exists) {
+                                    // تحديث عدد القراء
+                                    await FirebaseFirestore.instance
+                                        .collection('stories')
+                                        .doc(widget.storyId)
+                                        .update({
+                                      'readerCount': FieldValue.increment(1),
+                                    });
+
+                                    // إضافة القصة إلى مجموعة المستخدم
+                                    final userId =
+                                        FirebaseAuth.instance.currentUser?.uid;
+                                    if (userId != null) {
+                                      final userStoryRef = FirebaseFirestore
+                                          .instance
+                                          .collection('users')
+                                          .doc(userId)
+                                          .collection('reading')
+                                          .doc(widget.storyId);
+
+                                      // جلب أجزاء القصة
+                                      var partsSnapshot =
+                                          await FirebaseFirestore.instance
+                                              .collection('stories')
+                                              .doc(doc.id)
+                                              .collection('parts')
+                                              .get();
+
+                                      List<Map<String, dynamic>> partsList = [];
+                                      if (partsSnapshot.docs.isNotEmpty) {
+                                        for (var partDoc
+                                            in partsSnapshot.docs) {
+                                          partsList.add({
+                                            'partTitle': partDoc['partTitle'],
+                                            'content': partDoc['content'],
+                                          });
+                                        }
+                                      }
+
+                                      // إنشاء مستند القصة داخل مجموعة "reading"
+                                      await userStoryRef.set({
+                                        'title': widget.title,
+                                        'imageUrl': widget.imageUrl,
+                                        'overview': widget.overview,
+                                        'author': widget.author,
+                                        'bio': widget.bio,
+                                        'startedAt': FieldValue
+                                            .serverTimestamp(), // وقت بدء القراءة
+                                        'parts': partsList, // إضافة الأجزاء
                                       });
                                     }
 
-                                    // Navigate to the reading page
+                                    // التنقل إلى صفحة القراءة
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
@@ -211,10 +238,11 @@ class _ReadBookScreenState extends State<ReadBookScreen> {
                                       ),
                                     );
                                   } else {
-                                    print('No parts found');
+                                    print(
+                                        'Story not found with ID: ${widget.storyId}');
                                   }
-                                } else {
-                                  print('Story not found with ID: ${doc.id}');
+                                } catch (e) {
+                                  print('Error: $e');
                                 }
                               },
                               style: ElevatedButton.styleFrom(

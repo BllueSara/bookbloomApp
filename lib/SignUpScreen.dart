@@ -33,10 +33,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
     authSubscription = FirebaseAuth.instance.authStateChanges().listen((user) {
       if (mounted && user != null) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const MainPage(index: 0)),
-        );
+        _showBioRequiredDialog();
       }
     });
   }
@@ -58,6 +55,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   Future<void> signUp() async {
     if (!mounted) return;
+
+    // تحقق من صحة الحقول
     if (displayName.isEmpty) {
       _showErrorDialog('Please enter a display name.');
       return;
@@ -76,12 +75,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
 
     try {
+      // إنشاء الحساب باستخدام Firebase Auth
       final credential =
           await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
+      // تحديث displayName في ملف المستخدم
       await credential.user?.updateDisplayName(displayName);
 
       // حفظ بيانات المستخدم في Firestore مع bio كقيمة فارغة
@@ -96,11 +97,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
         'createdAt': FieldValue.serverTimestamp(),
       });
 
-      // عرض نافذة تحث المستخدم على إضافة bio
+      // عرض نافذة تحث المستخدم على تعبئة البايو
       if (mounted) {
         _showBioRequiredDialog();
       }
     } on FirebaseAuthException catch (e) {
+      // عرض رسالة خطأ مناسبة حسب الخطأ الناتج
       String errorMessage = '';
       if (e.code == 'email-already-in-use') {
         errorMessage = 'Email is already in use.';
@@ -113,6 +115,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
+  // نافذة تنبيه المستخدم بإكمال البايو
   void _showBioRequiredDialog() {
     if (!mounted) return;
     showDialog(
@@ -126,7 +129,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Registration complete! Please add a bio from your profile.',
+              ' Please add a bio from your profile.',
               style: TextStyles.normal18.copyWith(
                 color: Colorclass.brown,
               ),
@@ -146,7 +149,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
               child: MaterialButton(
                 onPressed: () {
-                  // الانتقال إلى صفحة الملف الشخصي
+                  // نقل المستخدم إلى صفحة الملف الشخصي
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(

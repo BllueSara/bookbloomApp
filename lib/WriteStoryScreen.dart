@@ -7,8 +7,10 @@ import 'package:bookbloom/BaseClasses/TextClass.dart';
 
 class WriteStoryScreen extends StatefulWidget {
   final String storyId;
+  final bool isEdit; // خاصية جديدة للتحقق إذا كانت حالة التعديل
 
-  const WriteStoryScreen({required this.storyId, super.key});
+  const WriteStoryScreen(
+      {required this.storyId, super.key, required this.isEdit});
 
   @override
   State<WriteStoryScreen> createState() => _WriteStoryScreenState();
@@ -17,66 +19,168 @@ class WriteStoryScreen extends StatefulWidget {
 class _WriteStoryScreenState extends State<WriteStoryScreen> {
   final TextEditingController _partContentController = TextEditingController();
   final TextEditingController _titleContentController = TextEditingController();
+
   String selectedPart = "Part 1";
-  List<String> parts = ["Part 1"]; // الجزء الافتراضي "Part 1"
+  List<String> parts = ["Part 1"];
+  Map<String, Map<String, String>> storyParts = {
+    "Part 1": {"title": "", "content": ""}
+  };
+  bool isEditingTitle = false;
+  bool isEditingContent = false;
 
-  Future<void> _loadPartContent() async {
-    FirebaseFirestore firestore = FirebaseFirestore.instance;
-
-    QuerySnapshot snapshot = await firestore
-        .collection('stories')
-        .doc(widget.storyId)
-        .collection('parts')
-        .where('partTitle', isEqualTo: selectedPart)
-        .orderBy('createdAt', descending: true)
-        .limit(1)
-        .get();
-
-    if (snapshot.docs.isNotEmpty) {
-      String content = snapshot.docs.first['content'];
-      _partContentController.text = content;
-    } else {
-      _partContentController.clear();
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isEdit) {
+      _fetchPartsFromFirestore(); // تحميل الأجزاء من Firestore فقط عند التعديل
     }
   }
 
-  Future<void> _savePart(String partContent, {bool isDraft = false}) async {
-    if (partContent.isEmpty) return;
+  Future<void> _fetchPartsFromFirestore() async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
 
+    QuerySnapshot partsSnapshot = await firestore
+        .collection('stories')
+        .doc(widget.storyId)
+        .collection('parts')
+        .get();
+
+    setState(() {
+      parts = partsSnapshot.docs.map((doc) => doc.id).toList();
+      storyParts = {
+        for (var doc in partsSnapshot.docs)
+          doc.id: {"title": doc['partTitle'], "content": doc['content']}
+      };
+      if (parts.isNotEmpty) {
+        selectedPart = parts.first;
+        _titleContentController.text = storyParts[selectedPart]?["title"] ?? "";
+        _partContentController.text =
+            storyParts[selectedPart]?["content"] ?? "";
+      }
+    });
+  }
+
+  Future<void> _updatePartToFirestore(String partId) async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
 
     try {
-      // إضافة الجزء الجديد إلى مجموعة الأجزاء
       await firestore
           .collection('stories')
           .doc(widget.storyId)
           .collection('parts')
-          .add({
-        'partTitle': selectedPart, // عنوان الجزء
-        'content': partContent, // محتوى الجزء
-        'createdAt': FieldValue.serverTimestamp(), // وقت الإنشاء
+          .doc(partId)
+          .update({
+        'partTitle': _titleContentController.text,
+        'content': _partContentController.text,
+        'updatedAt': FieldValue.serverTimestamp(),
       });
 
-      // إذا كانت isDraft = true، حدّث isDraft في القصة الرئيسية
-      if (isDraft) {
-        await firestore.collection('stories').doc(widget.storyId).update({
-          'isDraft': true, // جعل القصة مسودة
-        });
+      setState(() {
+        storyParts[partId] = {
+          "title": _titleContentController.text,
+          "content": _partContentController.text,
+        };
+        isEditingTitle = false;
+        isEditingContent = false;
+      });
+    } catch (e) {}
+  }
+
+  void _switchPart(String part) {
+    setState(() {
+      if (_titleContentController.text.isNotEmpty ||
+          _partContentController.text.isNotEmpty) {
+        // تحديث الجزء الحالي فقط إذا تغير المحتوى
+        if (_titleContentController.text !=
+                storyParts[selectedPart]?["title"] ||
+            _partContentController.text !=
+                storyParts[selectedPart]?["content"]) {
+          storyParts[selectedPart] = {
+            "title": _titleContentController.text,
+            "content": _partContentController.text,
+          };
+          _updatePartToFirestore(selectedPart);
+        }
       }
 
-      // عرض رسالة النجاح بناءً على حالة isDraft
-      _showSuccessDialog(context, isDraft);
+      selectedPart = part;
+      _titleContentController.text = storyParts[part]?["title"] ?? "";
+      _partContentController.text = storyParts[part]?["content"] ?? "";
+    });
+  }
 
-      // إذا لم تكن مسودة، أرجع المستخدم مع النص المحدث
-      if (!isDraft) {
-        Navigator.pop(context, partContent);
+  Future<void> _publishAllParts({required bool isDraft}) async {
+    FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    // تحديث الجزء الحالي بالمحتوى الموجود في الحقول النصية
+    storyParts[selectedPart] = {
+      "title": _titleContentController.text,
+      "content": _partContentController.text,
+    };
+
+    for (var part in parts) {
+      final title = storyParts[part]?["title"] ?? "";
+      final content = storyParts[part]?["content"] ?? "";
+
+      if (title.isNotEmpty && content.isNotEmpty) {
+        // إذا كانت حالة التعديل، قم بالتحديث بدلاً من الإضافة
+        final docRef = firestore
+            .collection('stories')
+            .doc(widget.storyId)
+            .collection('parts')
+            .doc(part);
+
+        final docSnapshot = await docRef.get();
+        if (docSnapshot.exists) {
+          await docRef.update({
+            'partTitle': title,
+            'content': content,
+            'isDraft': isDraft,
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+        } else {
+          await docRef.set({
+            'partTitle': title,
+            'content': content,
+            'isDraft': isDraft,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+        }
       }
-    } catch (e) {
-      // في حالة وجود خطأ
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('حدث خطأ أثناء الحفظ: $e')),
-      );
     }
+
+    // تحديث حالة المسودة في المستند الرئيسي
+    if (isDraft) {
+      await firestore.collection('stories').doc(widget.storyId).update({
+        'isDraft': true,
+      });
+    } else {
+      await firestore.collection('stories').doc(widget.storyId).update({
+        'isDraft': false,
+      });
+    }
+
+    _showSuccessDialog(context, isDraft);
+  }
+
+  void _addPart() {
+    setState(() {
+      if (_titleContentController.text.isNotEmpty ||
+          _partContentController.text.isNotEmpty) {
+        storyParts[selectedPart] = {
+          "title": _titleContentController.text,
+          "content": _partContentController.text,
+        };
+      }
+
+      final newPart = "Part ${parts.length + 1}";
+      parts.add(newPart);
+      storyParts[newPart] = {"title": "", "content": ""};
+
+      selectedPart = newPart;
+      _titleContentController.clear();
+      _partContentController.clear();
+    });
   }
 
   void _showSuccessDialog(BuildContext context, bool isDraft) {
@@ -94,7 +198,7 @@ class _WriteStoryScreenState extends State<WriteStoryScreen> {
               Text(
                 isDraft
                     ? 'Draft saved successfully'
-                    : 'Part published successfully',
+                    : 'story published successfully',
                 style: TextStyles.normal18.copyWith(
                   color: Colorclass.brown,
                 ),
@@ -113,13 +217,11 @@ class _WriteStoryScreenState extends State<WriteStoryScreen> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: MaterialButton(
-                  onPressed: () => !isDraft
-                      ? Navigator.of(context).pop()
-                      : Navigator.push(context, MaterialPageRoute(
-                          builder: (context) {
-                            return const MainPage(index: 1);
-                          },
-                        )),
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(
+                    builder: (context) {
+                      return const MainPage(index: 1);
+                    },
+                  )),
                   child: Text(
                     'OK',
                     style: TextStyles.normal16.copyWith(
@@ -133,12 +235,6 @@ class _WriteStoryScreenState extends State<WriteStoryScreen> {
         );
       },
     );
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _loadPartContent();
   }
 
   @override
@@ -169,19 +265,9 @@ class _WriteStoryScreenState extends State<WriteStoryScreen> {
                         color: Colorclass.white,
                         onSelected: (String value) {
                           if (value == "add") {
-                            setState(() {
-                              parts.add("Part ${parts.length + 1}");
-                              selectedPart = parts.last;
-                              _partContentController.clear();
-                              _titleContentController.clear();
-                            });
+                            _addPart();
                           } else {
-                            setState(() {
-                              selectedPart = value;
-                              _partContentController.clear();
-                              _titleContentController.clear();
-                              _loadPartContent();
-                            });
+                            _switchPart(value);
                           }
                         },
                         itemBuilder: (BuildContext context) {
@@ -193,14 +279,25 @@ class _WriteStoryScreenState extends State<WriteStoryScreen> {
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text(
-                                      part,
-                                      style: TextStyles.normal16.copyWith(
-                                        color: Colorclass.brown,
+                                    // عرض العنوان حسب حالة isEdit
+                                    if (widget.isEdit)
+                                      Text(
+                                        storyParts[part]?['title'] ??
+                                            'No Title',
+                                        style: TextStyles.normal16.copyWith(
+                                          color: Colorclass.brown,
+                                        ),
+                                      )
+                                    else
+                                      Text(
+                                        part,
+                                        style: TextStyles.normal16.copyWith(
+                                          color: Colorclass.brown,
+                                        ),
                                       ),
-                                    ),
-                                    if (part !=
-                                        "Part 1") // منع حذف الجزء الافتراضي
+
+                                    // زر الحذف
+                                    if (part != "Part 1")
                                       IconButton(
                                         icon: const Icon(
                                           Icons.remove_circle,
@@ -209,11 +306,20 @@ class _WriteStoryScreenState extends State<WriteStoryScreen> {
                                         ),
                                         onPressed: () {
                                           setState(() {
-                                            parts.remove(part);
+                                            if (parts.contains(part)) {
+                                              parts.remove(part);
+                                              storyParts.remove(part);
+                                            }
                                             if (selectedPart == part) {
                                               selectedPart = parts.first;
-                                              _partContentController.clear();
-                                              _titleContentController.clear();
+                                              _titleContentController.text =
+                                                  storyParts[selectedPart]
+                                                          ?["title"] ??
+                                                      "";
+                                              _partContentController.text =
+                                                  storyParts[selectedPart]
+                                                          ?["content"] ??
+                                                      "";
                                             }
                                           });
                                         },
@@ -247,7 +353,10 @@ class _WriteStoryScreenState extends State<WriteStoryScreen> {
                         child: Row(
                           children: [
                             Text(
-                              selectedPart,
+                              widget.isEdit
+                                  ? (storyParts[selectedPart]?['title'] ??
+                                      'No Title')
+                                  : selectedPart,
                               style: TextStyles.Bold16.copyWith(
                                 color: Colorclass.brown,
                               ),
@@ -259,63 +368,7 @@ class _WriteStoryScreenState extends State<WriteStoryScreen> {
                       ),
                       ElevatedButton(
                         onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return AlertDialog(
-                                backgroundColor: Colorclass.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                title: Text(
-                                  'Choose Option',
-                                  style: TextStyles.Bold16.copyWith(
-                                    color: Colorclass.brown,
-                                  ),
-                                ),
-                                content: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    ListTile(
-                                      title: Text(
-                                        'Publish Part',
-                                        style: TextStyles.normal16.copyWith(
-                                          color: Colorclass.brown,
-                                        ),
-                                      ),
-                                      onTap: () {
-                                        Navigator.of(context)
-                                            .pop(); // إغلاق Dialog
-                                        _savePart(_partContentController
-                                            .text); // حفظ الجزء
-                                      },
-                                    ),
-                                    ListTile(
-                                      title: Text(
-                                        'Publish Story',
-                                        style: TextStyles.normal16.copyWith(
-                                          color: Colorclass.brown,
-                                        ),
-                                      ),
-                                      onTap: () {
-                                        Navigator.of(context)
-                                            .pop(); // إغلاق Dialog
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                const MainPage(
-                                              index: 1,
-                                            ), // استبدل الصفحة بالوجهة المناسبة
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          );
+                          _publishAllParts(isDraft: false);
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colorclass.dustyPink,
@@ -338,28 +391,30 @@ class _WriteStoryScreenState extends State<WriteStoryScreen> {
                   child: Column(
                     children: [
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        padding: const EdgeInsets.symmetric(horizontal: 20.0),
                         child: TextFormField(
                           controller: _titleContentController,
                           textAlign: TextAlign.center,
+                          style: TextStyles.normal18.copyWith(
+                            color: Colorclass.addicon,
+                          ),
                           decoration: InputDecoration(
                             hintText: "Part Title",
-                            hintStyle: TextStyles.normal18.copyWith(
+                            labelStyle: TextStyles.normal16.copyWith(
                               color: Colorclass.addicon,
                             ),
                             border: InputBorder.none,
                           ),
-                          style: TextStyles.normal18.copyWith(
-                            color: Colorclass.addicon,
-                          ),
-                          onChanged: (value) {
-                            selectedPart = value;
-                          },
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return 'Please enter a part title';
                             }
                             return null;
+                          },
+                          onChanged: (value) {
+                            setState(() {
+                              isEditingTitle = value.isNotEmpty;
+                            });
                           },
                         ),
                       ),
@@ -396,7 +451,7 @@ class _WriteStoryScreenState extends State<WriteStoryScreen> {
                 padding: const EdgeInsets.all(15.0),
                 child: ElevatedButton(
                   onPressed: () {
-                    _savePart(_partContentController.text, isDraft: true);
+                    _publishAllParts(isDraft: true);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colorclass.grey,
