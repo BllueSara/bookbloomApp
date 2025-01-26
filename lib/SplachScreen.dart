@@ -11,6 +11,7 @@ class Splachscreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colorclass.white,
       body: Center(
         child: SingleChildScrollView(
           physics: const NeverScrollableScrollPhysics(),

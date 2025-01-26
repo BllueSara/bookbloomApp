@@ -91,31 +91,6 @@ class _ReadBookScreenState extends State<ReadBookScreen> {
                                           ),
                                         ),
                                       ),
-                                      const SizedBox(height: 2),
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: List.generate(
-                                          5,
-                                          (index) => const Icon(
-                                            Icons.star,
-                                            color: Colors.yellow,
-                                            size: 15,
-                                          ),
-                                        )
-                                          ..add(
-                                            const SizedBox(width: 8),
-                                          )
-                                          ..add(
-                                            Text(
-                                              "5.0",
-                                              style:
-                                                  TextStyles.normal16.copyWith(
-                                                color: Colorclass.grey,
-                                              ),
-                                            ),
-                                          ),
-                                      ),
                                     ],
                                   ),
                                 ),

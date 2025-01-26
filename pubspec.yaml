@@ -44,6 +44,7 @@ dependencies:
   provider: ^6.1.2
   lottie: ^3.2.0
   badges: ^3.1.2
+  flutter_launcher_icons: ^0.14.3
 
 dev_dependencies:
   flutter_test:
