@@ -696,7 +696,7 @@ class _ProfileState extends State<Profile> {
                 "Bio",
                 bio,
                 const Icon(
-                  Icons.biotech,
+                  Icons.edit,
                   color: Colorclass.brown,
                 ),
               ),

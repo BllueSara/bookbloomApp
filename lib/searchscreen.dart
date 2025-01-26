@@ -8,7 +8,6 @@ import 'package:bookbloom/BaseClasses/colorclass.dart';
 import 'package:bookbloom/BaseClasses/textclass.dart';
 import 'package:bookbloom/BaseClasses/TextStyleClass.dart';
 import 'package:lottie/lottie.dart';
-
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SearchScreen extends StatefulWidget {
@@ -42,11 +41,36 @@ class _SearchScreenState extends State<SearchScreen> {
           .get();
 
       if (authorQuery.docs.isNotEmpty) {
-        // Use for loop instead of map for async operations
         for (var doc in authorQuery.docs) {
           var data = doc.data();
           data['storyId'] = doc.id; // إضافة storyId
 
+          // التحقق من وجود collection "parts" في القصة
+          var partsQuery = await FirebaseFirestore.instance
+              .collection('stories')
+              .doc(doc.id)
+              .collection('parts')
+              .get();
+
+          // إذا لم يكن هناك "parts" في القصة، نضيف معلومات المستخدم بدلاً من القصة
+          if (partsQuery.docs.isEmpty) {
+            // جلب الـ bio من مجموعة users باستخدام username
+            var userQuery = await FirebaseFirestore.instance
+                .collection('users')
+                .where('username', isEqualTo: data['author'])
+                .get();
+
+            if (userQuery.docs.isNotEmpty) {
+              var userData = userQuery.docs.first.data();
+              userData['userId'] = userQuery.docs.first.id; // إضافة userId
+              userData['bio'] =
+                  userData['bio'] ?? 'No Bio'; // إضافة bio من users
+              results.add(userData);
+            }
+            continue; // تجاهل إضافة القصة إذا لم تحتوي على "parts"
+          }
+
+          // إذا كانت القصة تحتوي على "parts"، نضيف القصة
           // جلب الـ bio من مجموعة users باستخدام username
           var userQuery = await FirebaseFirestore.instance
               .collection('users')
@@ -63,6 +87,7 @@ class _SearchScreenState extends State<SearchScreen> {
           results.add(data);
         }
       } else {
+        // إذا لم تكن هناك قصص للمؤلف، نبحث عن المستخدمين
         var userQuery = await FirebaseFirestore.instance
             .collection('users')
             .where('username', isGreaterThanOrEqualTo: searchQuery)
@@ -70,7 +95,6 @@ class _SearchScreenState extends State<SearchScreen> {
             .get();
 
         if (userQuery.docs.isNotEmpty) {
-          // Use for loop instead of map for async operations
           for (var doc in userQuery.docs) {
             var userData = doc.data();
             userData['userId'] = doc.id; // إضافة userId
@@ -90,10 +114,19 @@ class _SearchScreenState extends State<SearchScreen> {
           .where('title', isLessThanOrEqualTo: '$searchQuery\uf8ff')
           .get();
 
-      // Use for loop instead of map for async operations
       for (var doc in titleQuery.docs) {
         var data = doc.data();
         data['storyId'] = doc.id; // إضافة storyId
+
+        // التحقق من وجود collection "parts" في القصة
+        var partsQuery = await FirebaseFirestore.instance
+            .collection('stories')
+            .doc(doc.id)
+            .collection('parts')
+            .get();
+
+        // إذا لم يكن هناك "parts" في القصة، تجاهل القصة
+        if (partsQuery.docs.isEmpty) continue;
 
         // جلب الـ bio من مجموعة users باستخدام author
         var userQuery = await FirebaseFirestore.instance
@@ -125,11 +158,23 @@ class _SearchScreenState extends State<SearchScreen> {
           .where('title', isLessThanOrEqualTo: '$searchQuery\uf8ff')
           .get();
 
-      // Use for loop instead of map for async operations
+      // قم بتخزين الـ ids التي تمت إضافتها مسبقًا لتجنب التكرار
+      Set<String> addedStoryIds = {};
+
       for (var doc in authorQuery.docs) {
         var data = doc.data();
         data['storyId'] = doc.id; // إضافة storyId
 
+        // التحقق من وجود collection "parts" في القصة
+        var partsQuery = await FirebaseFirestore.instance
+            .collection('stories')
+            .doc(doc.id)
+            .collection('parts')
+            .get();
+
+        // إذا لم يكن هناك "parts" في القصة، تجاهل القصة
+        if (partsQuery.docs.isEmpty) continue;
+
         // جلب الـ bio من مجموعة users باستخدام author
         var userQuery = await FirebaseFirestore.instance
             .collection('users')
@@ -143,14 +188,27 @@ class _SearchScreenState extends State<SearchScreen> {
           data['bio'] = 'No Bio'; // في حال لم يتم العثور على المستخدم
         }
 
-        results.add(data);
+        // إضافة القصة إذا لم تكن قد أُضيفت مسبقًا
+        if (!addedStoryIds.contains(data['storyId'])) {
+          results.add(data);
+          addedStoryIds.add(data['storyId']);
+        }
       }
 
-      // Use for loop instead of map for async operations
       for (var doc in titleQuery.docs) {
         var data = doc.data();
         data['storyId'] = doc.id; // إضافة storyId
 
+        // التحقق من وجود collection "parts" في القصة
+        var partsQuery = await FirebaseFirestore.instance
+            .collection('stories')
+            .doc(doc.id)
+            .collection('parts')
+            .get();
+
+        // إذا لم يكن هناك "parts" في القصة، تجاهل القصة
+        if (partsQuery.docs.isEmpty) continue;
+
         // جلب الـ bio من مجموعة users باستخدام author
         var userQuery = await FirebaseFirestore.instance
             .collection('users')
@@ -164,7 +222,11 @@ class _SearchScreenState extends State<SearchScreen> {
           data['bio'] = 'No Bio'; // في حال لم يتم العثور على المستخدم
         }
 
-        results.add(data);
+        // إضافة القصة إذا لم تكن قد أُضيفت مسبقًا
+        if (!addedStoryIds.contains(data['storyId'])) {
+          results.add(data);
+          addedStoryIds.add(data['storyId']);
+        }
       }
 
       // إزالة التكرار بين القصص حسب المؤلف والعنوان
