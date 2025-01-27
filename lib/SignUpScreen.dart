@@ -75,6 +75,25 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
 
     try {
+      final userSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('username', isEqualTo: username)
+          .get();
+
+      final displayNameSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .where('displayName', isEqualTo: displayName)
+          .get();
+
+      if (userSnapshot.docs.isNotEmpty) {
+        _showErrorDialog('Username is already taken.');
+        return;
+      }
+
+      if (displayNameSnapshot.docs.isNotEmpty) {
+        _showErrorDialog('Display name is already taken.');
+        return;
+      }
       // إنشاء الحساب باستخدام Firebase Auth
       final credential =
           await FirebaseAuth.instance.createUserWithEmailAndPassword(

@@ -32,7 +32,10 @@ class _LoginscreenState extends State<Loginscreen> {
       if (mounted && user != null) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const MainPage(index: 0,)),
+          MaterialPageRoute(
+              builder: (context) => const MainPage(
+                    index: 0,
+                  )),
         );
       }
     });
@@ -64,14 +67,18 @@ class _LoginscreenState extends State<Loginscreen> {
 
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const MainPage(index: 0,)),
+        MaterialPageRoute(
+            builder: (context) => const MainPage(
+                  index: 0,
+                )),
       );
     } on FirebaseAuthException catch (e) {
       if (e.code == 'user-not-found' || e.code == 'wrong-password') {
         _showErrorDialog(
             context, 'Your password or your email is not correct.');
       } else {
-        _showErrorDialog(context, 'Login failed: ${e.message}');
+        _showErrorDialog(
+            context, 'Your password or your email is not correct.');
       }
     } catch (e) {
       _showErrorDialog(context, 'An error occurred: ${e.toString()}');

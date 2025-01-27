@@ -127,30 +127,51 @@ class _ProfileState extends State<Profile> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Container(
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colorclass.grey,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: TextButton(
-                        onPressed: () {
-                          setState(() {
-                            displayName = controller.text; // تحديث الاسم
-                          });
-                          FirebaseFirestore.instance
-                              .collection('users')
-                              .doc(FirebaseAuth.instance.currentUser!.uid)
-                              .update({'displayName': displayName});
-
-                          Navigator.of(context).pop();
-                        },
-                        child: Text(
-                          "Save",
-                          style: TextStyles.Bold16.copyWith(
-                              color: Colorclass.brown),
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colorclass.grey,
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                      ),
-                    ),
+                        child: TextButton(
+                          onPressed: () async {
+                            final newDisplayName = controller.text;
+
+                            // تحقق إذا كان الاسم موجودًا بالفعل في Firestore
+                            final displayNameSnapshot = await FirebaseFirestore
+                                .instance
+                                .collection('users')
+                                .where('displayName', isEqualTo: newDisplayName)
+                                .get();
+
+                            if (displayNameSnapshot.docs.isNotEmpty) {
+                              // عرض رسالة الخطأ فقط إذا كان الاسم موجودًا
+                              _showErrorDialog(
+                                  'Display name is already taken.');
+                              return; // لا نكمل العملية بعد عرض الخطأ
+                            }
+
+                            // تحديث الاسم في Firestore فقط إذا كان الاسم غير موجود
+                            await FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(FirebaseAuth.instance.currentUser!.uid)
+                                .update({'displayName': newDisplayName});
+
+                            await FirebaseAuth.instance.currentUser!
+                                .updateDisplayName(newDisplayName);
+
+                            setState(() {
+                              displayName = newDisplayName;
+                            });
+                            Navigator.of(context)
+                                .pop(); // إغلاق الـ Dialog بعد التحديث
+                          },
+                          child: Text(
+                            "Save",
+                            style: TextStyles.Bold16.copyWith(
+                              color: Colorclass.brown,
+                            ),
+                          ),
+                        )),
                   ),
                 ],
               ),
@@ -538,7 +559,7 @@ class _ProfileState extends State<Profile> {
                               );
                             } catch (e) {
                               _showErrorDialog(
-                                  'Error: ${e.toString()}'); // عرض رسالة خطأ
+                                  " incorrect password."); // عرض رسالة خطأ
                             }
                           }
                         },
@@ -696,7 +717,7 @@ class _ProfileState extends State<Profile> {
                 "Bio",
                 bio,
                 const Icon(
-                  Icons.edit,
+                  Icons.biotech,
                   color: Colorclass.brown,
                 ),
               ),
@@ -821,13 +842,27 @@ class _ProfileState extends State<Profile> {
                           child: TextButton(
                             onPressed: () async {
                               final newValue = controller.text;
+                              final newUsername = controller.text;
+
                               if (hint == "Username") {
+                                final userNameSnapshot = await FirebaseFirestore
+                                    .instance
+                                    .collection('users')
+                                    .where('username', isEqualTo: newUsername)
+                                    .get();
+                                if (userNameSnapshot.docs.isNotEmpty) {
+                                  // عرض رسالة الخطأ فقط إذا كان الاسم موجودًا
+                                  _showErrorDialog(
+                                      'Username name is already taken.');
+                                  return; // لا نكمل العملية بعد عرض الخطأ
+                                }
                                 await FirebaseFirestore.instance
                                     .collection('users')
                                     .doc(FirebaseAuth.instance.currentUser!.uid)
-                                    .update({'username': newValue});
+                                    .update({'username': newUsername});
+
                                 setState(() {
-                                  username = newValue;
+                                  username = newUsername;
                                 });
                               } else if (hint == "Display Name") {
                                 await FirebaseFirestore.instance
