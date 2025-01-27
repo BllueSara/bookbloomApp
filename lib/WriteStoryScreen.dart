@@ -112,6 +112,14 @@ class _WriteStoryScreenState extends State<WriteStoryScreen> {
   Future<void> _publishAllParts({required bool isDraft}) async {
     FirebaseFirestore firestore = FirebaseFirestore.instance;
 
+    // تحقق من أن الحقول ليست فارغة قبل النشر
+    if (!isDraft &&
+        (_titleContentController.text.isEmpty ||
+            _partContentController.text.isEmpty)) {
+      _showErrorDialog(context);
+      return;
+    }
+
     // تحديث الجزء الحالي بالمحتوى الموجود في الحقول النصية
     storyParts[selectedPart] = {
       "title": _titleContentController.text,
@@ -161,6 +169,54 @@ class _WriteStoryScreenState extends State<WriteStoryScreen> {
     }
 
     _showSuccessDialog(context, isDraft);
+  }
+
+  void _showErrorDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: Colorclass.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "You can't publish without content. You can save as draft and edit it later.",
+                style: TextStyles.normal18.copyWith(
+                  color: Colorclass.brown,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              Container(
+                height: 40,
+                width: 120,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Colorclass.brown, Colorclass.dustyPink],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: MaterialButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    'OK',
+                    style: TextStyles.normal16.copyWith(
+                      color: Colorclass.white,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   void _addPart() {
